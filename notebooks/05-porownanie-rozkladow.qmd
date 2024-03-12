@@ -1,0 +1,35 @@
+---
+title: "Porównanie z rozkładów"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+---
+
+```{r}
+library(tidyverse)
+library(cobalt)
+library(knitr)
+```
+
+```{r}
+dane <- read_csv("../data/popyt-zajecia-dane.csv") |>
+  mutate(flag = !is.na(id_cbop),
+         zawod_kod2 = factor(zawod_kod2),
+         waga_f = ifelse(!is.na(waga), waga*wolne_miejsca, wolne_miejsca_cbop))
+```
+
+```{r}
+head(dane) |> kable()
+```
+```{r}
+bal.tab(flag ~ sek + klasa_pr + sekc_pkd + zawod_kod2, data = dane, weights = dane$waga_f) |>
+  plot()
+```
+

@@ -1,0 +1,196 @@
+---
+title: "Masowa imputacja: metoda najbliższego sąsiada"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+toc-title: Spis treści
+lang: pl
+---
+
+# Wprowadzenie
+
+W tym skrypcie zastosujemy metodę opartą na pracy [Rivers, D. (2007). Sampling for web surveys, Proceedings of the Survey Research Methods
+Section of the American Statistical Association, pp. 1–26.](https://static.texastribune.org/media/documents/Rivers_matching4.pdf). 
+
+W tym ćwiczeniu porównamy dwa podejścia:
+
+1. wykorzystując zmienne $\mathbf{X}$ do łączenia
+2. wykorzystując wartości przewidywane $\hat{y}_i$ na podstawie modelu regresji logistycznej
+
+Poszukiwania sąsiadów dokonamy wykorzystując metodę K-D tree dla przybliżonych sąsiadów oprogramowaną w pakiecie `RANN` (funkcja `nn2`), która opiera się na bibliotece [ANN w C++](http://www.cs.umd.edu/~mount/ANN/).
+
+
+Zainstalujemy potrzebne pakiety
+
+```{r, eval=FALSE}
+install.packages("RANN")
+```
+
+Wczytujemy pakiet `tidyverse`.
+
+```{r}
+library(tidyverse)
+library(survey)
+library(RANN)
+```
+
+Wczytujemy dane na potrzeby zajęć oraz dodajemy nowe zmienne:
+
+-   `R` -- informacja czy rekord przynależy do zbioru CBOP
+-   `waga_do_modelu` -- zmienna, którą wykorzystamy do określenia, że
+    dany rekord dotyczy więcej niż jednego wakatu
+
+```{r}
+dane <- read_csv("../data/popyt-zajecia-dane.csv") |>
+  mutate(zawod_kod2 = factor(zawod_kod2),
+         sek = as.factor(sek),
+         jedna_zmiana=as.numeric(jedna_zmiana),
+         R = is.na(id_popyt),
+         waga_do_modelu = ifelse(is.na(id_popyt), wolne_miejsca_cbop, wolne_miejsca*waga))
+head(dane)
+```
+
+# Metoda najbliższego sąsiada
+
+## Metoda Rivers'a -- łączenie na podstawie zmiennych X
+
+Na tę chwilę założymy, że zbiory są rozłączne!
+
+```{r}
+proba_nielosowa <- dane %>% filter(is.na(id_popyt))
+proba_losowa <- dane %>% filter(!is.na(id_popyt))
+```
+
+Tworzymy macierz X_A (próba nielosowa) i X_B (próba losowa)
+
+
+```{r}
+X_A <- model.matrix(~ -1 + sek + klasa_pr + sekc_pkd + woj + zawod_kod2, data = proba_nielosowa)
+X_B <- model.matrix(~ -1 + sek + klasa_pr + sekc_pkd + woj + zawod_kod2, data = proba_losowa)
+head(X_B)
+```
+
+
+```{r}
+dim(X_A)
+dim(X_B)
+```
+
+W zbiorze A mamy 10972 obserwacje, a zbiorze B 9974. Oznacza to, że musimy znaleźć 9974 jednostek ze zbioru A dla jednostek ze zbioru B (mogą się powtarzać).
+
+```{r}
+sasiedzi <- nn2(data = X_A, query = X_B, k = 1)
+str(sasiedzi,1)
+```
+
+Funkcja `nn2` zwraca listę składającą się z dwóch wektorów:
+
++ `nn.indx` -- indeksy (numery wierszy) ze zbioru `X_A`,
++ `nn.dists` -- odległości między sąsiadami ze zbiorów `X_A` i `X_B` 
+
+Wyznaczamy teraz estymator $\hat{\theta}_{M1}$ czyli chcemy poznać odsetek podmiotów poszukujących pracowników na jedną zmianę.
+
+```{r}
+indeksy <- sasiedzi$nn.idx[,1]
+y <- proba_nielosowa$jedna_zmiana[indeksy]
+
+naiwny <- weighted.mean(proba_nielosowa$jedna_zmiana, proba_nielosowa$wolne_miejsca_cbop)
+
+theta_1 <- weighted.mean(y, proba_losowa$waga*proba_losowa$wolne_miejsca)
+
+print(c(naiwny = naiwny, theta_1 = theta_1))
+```
+
+
+Oznacza to, że około 72% podmiotów poszukuje pracowników do pracy na jedną zmianę. Gdybyśmy wykorzystali wyłącznie dane z CBOP ten odstek wynosiłby 52%. Porówjamy teraz wyniki z wykorzystaniem łączenia na podstawie $\hat{y}$.
+
+## Metoda Rivers'a -- łączenie na podstawie $\hat{y}$
+
+Budujemy model
+
+```{r}
+model_a <- glm(formula = jedna_zmiana ~ sek + klasa_pr + sekc_pkd + woj + zawod_kod2, 
+               data = proba_nielosowa,
+               family = binomial(),
+               weights = proba_nielosowa$wolne_miejsca_cbop)
+
+y_hat_a <- fitted(model_a)
+y_hat_b <- predict(model_a, proba_losowa, type = "response")
+
+summary(y_hat_b)
+summary(y_hat_a)
+```
+
+Szukamy sąsiadów na podstawie wartości przewidywanych
+
+```{r}
+sasiedzi_hat <- nn2(data = y_hat_a, query = y_hat_b, k = 1)
+str(sasiedzi_hat,1)
+```
+
+```{r}
+indeksy_hat <- sasiedzi_hat$nn.idx[,1]
+y_hat <- proba_nielosowa$jedna_zmiana[indeksy_hat]
+theta_2 <- weighted.mean(y_hat, proba_losowa$waga*proba_losowa$wolne_miejsca)
+print(c(naiwny = naiwny, theta_1 = theta_1, theta_2 = theta_2))
+```
+
+Wykorzystując podejście oparte na wartościach przewidywanych ($\hat{y}$) otrzymujemy oszacowanie niższe tj. 71% ale mając na względzie obciążenie $O_p (n^{1/2-1/p})$ bardziej ufamy wynikowi na podstawie wartości przewidywanych.
+
+# Symulacja 
+
+W symulacji pokażę, że wynik wskazany w twierdzeniu o obciążeniu zależnym od liczby zmiennych użytych jest poprawny.
+
+```{r}
+set.seed(123)
+n <- 100000
+n_a <- 500
+
+x1 <- rnorm(n)
+x2 <- rnorm(n)
+x3 <- rnorm(n)
+x4 <- rnorm(n)
+epsilon <- rnorm(n, 0, 4)
+y <- 2 + 1*x1 -4*x2 +5*x3 + 1.5*x4 + epsilon
+rho <- exp(1 - x1 + x2)/(1+exp(1-x1 + x2))
+df <- data.frame(x1,x2,x3,x4,y,rho)
+y_true <- mean(y)
+
+B <- 500
+sim_result <- matrix(0, ncol = 3, nrow = B)
+
+for (b in 1:B) {
+  ## proba losowa
+  s_a <- df[sample(1:nrow(df), n_a, replace = T), ]
+  s_b <- df[rbinom(n=n, size=1,prob = df$rho) == 1, ]
+
+  ## po 2 zmiennych
+  nn_2x <- nn2(data = s_b[, c("x1", "x2")], query = s_a[, c("x1", "x2")], k = 1)
+  ## po 3 zmiennych
+  nn_3x <- nn2(data = s_b[, c("x1", "x2", "x3")], query = s_a[, c("x1", "x2", "x3")], k = 1)
+  ## po 4 zmiennych
+  nn_4x <- nn2(data = s_b[, c("x1", "x2", "x3", "x4")], query = s_a[, c("x1", "x2", "x3", "x4")], k = 1)
+
+  sim_result[b, ] <- c(nn_2x = mean(s_b$y[nn_2x$nn.idx[,1]]), nn_3x = mean(s_b$y[nn_3x$nn.idx[,1]]), nn_4x = mean(s_b$y[nn_4x$nn.idx[,1]]))
+
+}
+
+print("======= bias ====== ")
+bias <- colMeans(sim_result) - y_true
+print(bias)
+print("======= variance ====== ")
+vars <- apply(sim_result, 2, var)
+print(vars)
+print("======= RMSE ====== ")
+mse <- bias^2 + vars
+print(sqrt(mse))
+```
+

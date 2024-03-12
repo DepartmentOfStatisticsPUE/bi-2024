@@ -1,0 +1,53 @@
+---
+title: "Analiza wyników ankiety z zajęć dot. gospodarstw domowych i osób"
+author: "Maciej Beręsewicz"
+format: 
+  html:
+    code-fold: true
+    self-contained: true
+    code-summary: "Show the code"
+execute:
+  message: false
+  warning: false
+---
+
+Wyniki badania na podstawie ankiety z Google Sheets
+
+```{r}
+library(tidyverse)
+survey <- read.table("../data/01-google-sheets-results.csv",  header = F,
+                     col.names =  c("gd", "os"), sep = "\t", dec = ",") |>
+  mutate(id = row_number()) |>
+  pivot_longer(cols = gd:os, names_to = "pop", values_to = "guess")
+
+facet_labs <- c(
+  gd = "Gospodarstwa domowe",
+  os = "Osoby w wieku 17-70"
+)
+
+ggplot(data = survey, aes(x = id, y = guess)) +
+  geom_point() +
+  facet_wrap(~pop,
+             labeller = labeller(pop = facet_labs)) +
+  geom_hline(data = data.frame(pop = c("gd", "os"), 
+                               y = c(11.30, 21.78)),
+             aes(yintercept = y), linetype = "dashed", color = "red") +
+  geom_label(data = data.frame(id = c(3,3), 
+                              y = c(11.30+1, 21.78+1),
+                              pop = c("gd", "os"),
+                              label = c("11.3", "21.8")),
+            aes(x = id, y = y, label = label)) + 
+  stat_summary(fun = mean, aes(x = 1, yintercept = ..y..), geom = "hline", linetype = "dotted") + 
+  labs(x = "Nr respondenta", y = "Liczba (w mln)",
+       title = "Wyniki ankiety z zajęć 14.03.2023 w zakresie statystyk dot. Internetu",
+       caption = c("
+       Pytania: 1) Według NSP 2021 w Polsce w 2021 roku było 12,56 mln gospodarstw domowych. 
+       Jak Pan/i myśli ile gospodarstw domowych miało dostęp do internetu? Proszę podać liczbę w milionach [Gospodarstwa domowe].
+       2) Według NSP 2021 w Polsce w 2012 roku było 27,22 mln osób w wieku 17-70 lat. 
+       Jak Pan/i myśli ile osób codziennie korzysta z Internetu (niezależnie w jaki sposób)? Proszę podać liczbę w milionach [Osoby w wieku 17-70].
+       Linie poziome: czerwona: wartości w oparciu o badanie Społeczeństwo informacyjne w Polsce w 2021 roku. 
+       Czarna: średnia z odpowiedzi respondentów")) +
+  theme(plot.caption = element_text(hjust = 0)) +
+  scale_y_continuous(limits = c(0, 30))
+```
+

@@ -1,0 +1,43 @@
+---
+title: "Meng -- data deficit index"
+author: "Maciej Beręsewicz"
+format: 
+  html:
+    code-fold: true
+    self-contained: true
+    code-summary: "Show the code"
+execute:
+  message: false
+  warning: false
+---
+
+
+```{r}
+N <- 38e6
+f_share <- 0.8
+bias <- function(x, n_size=N*f_share, D0=(1-f_share)/f_share) sqrt(n_size)*sqrt(D0*x^2 /(1-D0*x^2))
+curve(
+  expr = bias,
+  from = 0.0001,
+  to = 0.006,
+  ylab = "Błąd standardowy",
+  xlab = expression(rho),
+  ylim = c(0, 15),
+  main = "Ilustracja big data paradox (Meng 2018, N = 38 mln)"
+)
+
+f_share <- 0.01
+bias <- function(x, n_size=N*f_share, D0=(1-f_share)/f_share) sqrt(n_size)*sqrt(D0*x^2 /(1-D0*x^2))
+curve(
+  expr = bias,
+  from = 0.0001,
+  to = 0.006,
+  add = T,
+  col = "red"
+)
+abline(v = 0.001, h = 6.13, lty = 3, col = "red")
+abline(v = 0.005, h = 13.78, lty = 4, col = "black")
+legend(x = 0.003, y = 4, legend = c("próba losowa (1%)", "big data (80%)"), lty = 3:4, col = c("red", "black"))
+```
+
+

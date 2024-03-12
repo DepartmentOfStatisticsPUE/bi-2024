@@ -1,0 +1,91 @@
+---
+title: "Symulacje -- wprowadzenie"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: false
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+toc-title: Spis treści
+---
+
+Ćwiczymy programowanie symulacji komputerowych na potrzeby projektu z Badań Internetowych.
+
+### Przykład 1
+
+Ćwiczymy losowanie proste w języku R
+
+```{r}
+set.seed(123)
+sample(x = 1:5, size = 3)
+```
+
+### Przykład 2
+
+Ćwiczenie losowanie z nierównymi prawdopodobieństwami
+
+```{r}
+set.seed(123)
+sample(x = 1:5,
+       size = 3,
+       prob = c(0.1, 0.1, 0.1, 0.3, 0.4))
+```
+
+### Przykład 3
+
+Symulacja polega na tym, że losujemy 1000 razy wektor 3 elementowy z 5 elementowego z prawdopodobieństwami określonymi w przykładzie 3.
+
+```{r}
+set.seed(123)
+N <- 1000
+wynik <- matrix(data = 0, nrow = N, ncol = 3)
+
+for (i in 1:N) {
+  wynik[i,] <- sample(x = 1:5,
+                      size = 3,
+                      prob = c(0.1, 0.1, 0.1, 0.3, 0.4))
+}
+
+head(wynik)
+```
+
+Alternatywnie z wykorzystaniem funkcji `replicate`
+
+```{r}
+set.seed(123)
+wynik <- replicate(N, sample(x = 1:5, size = 3, prob = c(0.1, 0.1, 0.1, 0.3, 0.4)))
+wynik <- t(wynik) ## trzeba transponować bo mamy 1000 kolum
+head(wynik)
+```
+### Przykład 4
+
+Generujemy zgodnie z następującymi założeniami
+
+$$
+\begin{align}
+X_1 & \sim N(2,2) \\
+X_2 & \sim N(-2,1) \\
+\epsilon & \sim N(0,1) \\
+Y & = 1 + 2 X_1 + 3X_2 + \epsilon
+\end{align}
+$$
+```{r}
+set.seed(20230228)
+pop_size <- 10000 ## wielkość populacji
+x1 <- rnorm(n=pop_size, mean=2,sd=2) ## x1 ~ N(2,2)
+x2 <- rnorm(n=pop_size, mean=-2,sd=1) ## x2 ~ N(-2,1)
+epsilon <- rnorm(n=pop_size) ## epsilon ~ N(0,1)
+y <- 1 + 2*x1 + 3*x2 + epsilon ## równanie dla y 
+df <- data.frame(x1, x2, y) ## ramka danych
+head(df)
+```
+Sprawdźmy czy funkcja `lm` działa poprawnie.
+
+```{r}
+lm(y~ x1 + x2, data=df)
+```
+

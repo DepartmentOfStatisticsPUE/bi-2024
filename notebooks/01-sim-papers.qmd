@@ -1,0 +1,216 @@
+---
+title: "Symulacje -- wybrane artykuły"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+toc-title: Spis treści
+bibliography: references.bib
+lang: pl
+---
+
+# Artykuł @kim2018
+
+## Omówienie
+
+-   Celem badania było zweryfikowanie skuteczności metod estymacji w
+    przypadku prób nielosowych.
+-   Metody zaproponowane przez Kim'a i Wang'a (2018) zakładają istnienie
+    dwóch prób: losowej (o liczebności 500 lub 1 000) oraz nielosowej.
+-   Próba losowa została wylosowania stosując losowanie proste bez
+    zwracania.
+-   Przynależność do próby losowej wylosowano zgodnie z rozkładem
+    Bernulliego ($\delta_i \sim Bern(p_i)$)
+-   Wielkość populacji ($N$) ustalono na 1 000 000.
+-   Zmienne objaśniające ($X_1$ i $X_2$) oraz błąd losowy ($\epsilon$)
+    były wygenerowane zgodnie z następującym układem
+
+$$
+\begin{aligned}
+X_1 & \sim N(1,1), \\
+X_2 & \sim Exp(1), \\ 
+\epsilon & \sim N(0,1).
+\end{aligned}
+$$
+
+-   Następnie wygenerowano dwie zmienne celu $Y_1$ i $Y_2$ według
+    następujących modeli
+
+$$
+\begin{aligned}
+Y_1 & = 1 + X_1 + X_2 + \epsilon, \\
+Y_2 & = 0.5(X_1-0.5)^2 + X_2 + \epsilon.
+\end{aligned}
+$$
+
+-   Identyfikator $\delta_i$ wylosowano z rozkładu Bernoullego zgodnie z
+    prawdopodobieństwem $p_i$ danym dwoma wzorami:
+
+$$
+\begin{aligned}
+\text{logit}(p_1) & = X_2, \quad \text{ czyli} \frac{\exp(X_2)}{1 + \exp(X_2)}, \\
+\text{logit}(p_2) & = -0.5 + 0.5(X_2-2)^2, \quad \text{czyli} \frac{\exp(-0.5 + 0.5(X_2-2)^2)}{1 + \exp(-0.5 + 0.5(X_2-2)^2)}.
+\end{aligned}
+$$
+
+## Implementacja w R
+
+Generowanie danych
+
+```{r}
+set.seed(1234567890)
+N <- 1e6 ## 1000000
+x1 <- rnorm(n = N, mean = 1, sd = 1)
+x2 <- rexp(n = N, rate = 1)
+epsilon <- rnorm(n = N) # rnorm(N)
+y1 <- 1 + x1 + x2 + epsilon
+y2 <- 0.5*(x1 - 0.5)^2 + x2 + epsilon
+p1 <- exp(x2)/(1+exp(x2))
+p2 <- exp(-0.5+0.5*(x2-2)^2)/(1+exp(-0.5+0.5*(x2-2)^2))
+populacja <- data.frame(x1,x2,y1,y2,p1,p2)
+head(populacja)
+```
+
+Losowanie przynależności do big data
+
+```{r}
+set.seed(123)
+flag_bd1 <- rbinom(n = N, size = 1, prob = populacja$p1)
+table(flag_bd1)
+```
+
+oraz oszacowanie $\bar{y}$ na podstawie big data
+
+```{r}
+c("big data"=mean(populacja[flag_bd1 == 1, "y1"]), "wartość prawdziwa" = mean(y1))
+```
+
+## Przyjrzyjmy się danym
+
+Rozkład X2
+
+```{r}
+hist(x2, breaks = "scott")
+```
+
+Zależność między $X_1$, a $Y_2$
+
+```{r}
+## ograniczam liczbę punktów bo jest ich bardzo dużo (biorę 10k)
+set.seed(1234)
+los <- sample(1:N,10000, replace = F)
+plot(x1[los], y2[los],
+     xlab = "X_1",
+     ylab = "Y_2")
+```
+
+Histogram $p_1$ i $p_2$
+
+```{r}
+par(mfrow = c(1,2))
+hist(p1)
+hist(p2)
+```
+
+Wykresy funkcji dla $p_1$ i $p_2$
+
+```{r}
+curve(expr = exp(x)/(1+exp(x)), 
+      from = -5, to = 5,
+      ylab = "f(x)")
+curve(expr = exp(-0.5+0.5*(x-2)^2)/(1+exp(-0.5+0.5*(x-2)^2)), 
+      from = -5, to = 5,
+      add = TRUE,
+      col = "red",
+      ylab = "")
+```
+
+# Artykuł @yang2020
+
+## Omówienie 
+
+Autorzy zakładają populację składającą się ze zmiennych $X$ oraz $Y$ daną
+
+$$
+\mathcal{F}_{N}=\left\{\left(X_{i}, Y_{i}\right): i=1, \ldots, N\right\},
+$$ 
+
+gdzie wielkość populacji to $N=10000$, $Y_{i}$ może być zmienną ciągłą lub dyskretną oraz
+
+$$
+X_{i}=\left(1, X_{1, i}, \ldots, X_{p-1, i}\right)^{\mathrm{T}},
+$$
+jest $p$-wymiarowym wektorem zmiennych pomocniczych ze stałą 1 na pirwszym miejscu, a pozostałe zmienne zostały wyngernowane z rozkładu normalnego standaryzowanego. Autorzy ustalili liczbę zmiennych na $p=50$. 
+
+From the finite population, we select a non-probability sample $\mathcal{B}$ of size $n_{\mathrm{B}} \approx 2000$, according to the selection indicator $I_{\mathrm{B}, i} \sim$ Ber $\left(\pi_{\mathrm{B}, i}\right)$.
+
+We select a probability sample $\mathcal{A}$ of the average size $n_{\mathrm{A}}=500$ under Poisson sampling with
+
+$$
+\pi_{\mathrm{A}, i} \propto\left(0.25+\left|X_{1 i}\right|+0.03\left|Y_{i}\right|\right).
+$$ 
+
+The parameter of interest is the population mean $\mu=N^{-1} \sum_{i=1}^{N} Y_{i}$.
+
+For the non-probability sampling probability, we consider both linear and non-linear sampling score models:
+
+  + $\operatorname{logit}\left(\pi_{\mathrm{B}, i}\right)=\alpha_{0}^{\mathrm{T}} X_{i}$, where $\alpha_{0}=(-2,1,1,1,1,0,0,0, \ldots, 0)^{\mathrm{T}}$ (model PSM I);
+  + $\operatorname{logit}\left(\pi_{\mathrm{B}, i}\right)=3.5+\alpha_{0}^{\mathrm{T}} \log \left(X_{i}^{2}\right)-\sin \left(X_{3, i}+X_{4, i}\right)-X_{5, i}-X_{6, i}$, where $\alpha_{0}=(0,0,0,3,3,3,3$,
+$0, \ldots, 0)^{\mathrm{T}}$ (model PSM II).
+
+For generating a continuous outcome variable $Y_{i}$, we consider both linear and non-linear
+outcome models with $\beta_{0}=(1,0,0,1,1,1,1,0, \ldots, 0)^{\mathrm{T}}$ :
+
+  + $Y_{i}=\beta_{0}^{\mathrm{T}} X_{i}+\epsilon_{i}, \epsilon_{i} \sim \mathcal{N}(0,1)$ (model OM I);
+  + $Y_{i}=1+\exp \left\{3 \sin \left(\beta_{0}^{\mathrm{T}} X_{i}\right)\right\}+X_{5, i}+X_{6, i}+\epsilon_{i}, \epsilon_{i} \sim \mathcal{N}(0,1)$ (model OM II).
+
+For generating a binary outcome variable $Y_{i}$, we consider both linear and non-linear outcome
+models with $\beta_{0}=(1,0,0,3,3,3,3,0, \ldots, 0)^{\mathrm{T}}$,
+
++ $Y \sim \operatorname{Ber}\left\{\pi_{Y}(X)\right\}$ with logit $\left\{\pi_{Y}(X)\right\}=\beta_{0}^{\mathrm{T}} X$ (model OM III);
++ $Y \sim \operatorname{Ber}\left\{\pi_{Y}(X)\right\}$ with logit $\left\{\pi_{Y}(X)\right\}=2-\log \left\{\left(\beta_{0}^{\mathrm{T}} X\right)^{2}\right\}+2 X_{5, i}+2 X_{6, i}$ (model OM IV).
+
+## Implementacja
+
+```{r }
+library(sampling) ## inclusionprobabilities + UPpoisson 
+set.seed(1234567890)
+N <- 10000
+p <- 50
+n_A <- 500
+X <- matrix(rnorm(N * (p-1)), ncol = p-1)
+X <- cbind(rep(1, N), X)
+
+## parametry beta i alpha
+beta0 <- c(1, 0, 0, 1, 1, 1, 1, rep(0, p-7))
+beta1 <- c(1, 0, 0, 3, 3, 3, 3, rep(0, p-7))
+alpha0 <- c(-2, 1, 1, 1, 1, rep(0, p-5))
+alpha1 <- c(0, 0, 0, 3, 3, 3, 3, rep(0, p-7))
+
+## y variables
+epsilon <- rnorm(N)
+Y_OM1 <- X %*% beta0 + epsilon
+Y_OM2 <- 1 + exp(3*sin(X %*% beta0)) + X[, 6] + X[, 5] + epsilon
+pi_Y_OM3 <- as.numeric(plogis(X %*% beta1))
+pi_Y_OM4 <- as.numeric(plogis(2-log((X %*% beta1)^2) + 2*X[,6] + 2*X[,7]))
+Y_OM3 <- rbinom(N, size = 1, prob = pi_Y_OM3)
+Y_OM4 <- rbinom(N, size = 1, prob = pi_Y_OM4)
+
+## nonprob
+pi_B_PMS1 <- as.numeric(plogis(X %*% alpha0))
+pi_B_PMS2 <- as.numeric(plogis(3.5 + log(X^2) %*% alpha0 - sin(X[,4] + X[,5]) - X[,6]- X[,7]))
+
+## prob
+pi_A_Y_OM1 <- inclusionprobabilities(0.25 + abs(X[, 2]) + 0.03*abs(Y_OM1), n_A)
+pi_A_Y_OM2 <- inclusionprobabilities(0.25 + abs(X[, 2]) + 0.03*abs(Y_OM2), n_A)
+pi_A_Y_OM3 <- inclusionprobabilities(0.25 + abs(X[, 2]) + 0.03*abs(Y_OM3), n_A)
+pi_A_Y_OM4 <- inclusionprobabilities(0.25 + abs(X[, 2]) + 0.03*abs(Y_OM4), n_A)
+
+```
+

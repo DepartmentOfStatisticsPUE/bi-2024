@@ -1,0 +1,44 @@
+---
+title: "Web-scraping"
+author: "Maciej Beręsewicz"
+format: 
+  html:
+    code-fold: true
+    self-contained: true
+    code-summary: "Show the code"
+execute:
+  message: false
+  warning: false
+---
+
+# Pakiety
+
+```{r}
+library(rvest)
+library(stringi)
+```
+
+## Archiwum pracuj.pl
+
+```{r}
+read_html("https://archiwum.pracuj.pl/archive/offers?Year=2021&Month=1&PageNumber=1") %>%
+  html_nodes("div.offers_item_link_cnt") %>%
+  html_nodes("span:first-child") %>%
+  html_text() 
+```
+## Żabka
+
+```{r}
+url <- "https://www.zabka.pl/produkty/spragniony"
+doc <- read_html(url)
+doc
+```
+
+```{r}
+doc |>
+  html_nodes("span.price.product__price") |>
+  html_text() |>
+  trimws() |>
+  stri_extract(regex = "\\d{1,}")
+```
+

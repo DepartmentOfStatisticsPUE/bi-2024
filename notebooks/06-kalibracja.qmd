@@ -1,0 +1,419 @@
+---
+title: "Metody quasi-randomizacyjne: kalibracja"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+toc-title: Spis treści
+
+lang: pl
+---
+
+
+# Wprowadzenie
+
+Wczytujemy pakiet `tidyverse`.
+
+```{r}
+library(tidyverse)
+library(knitr)
+library(survey)
+```
+
+Wczytujemy dane na potrzeby zajęć.
+
+```{r}
+dane <- read_csv("../data/popyt-zajecia-dane.csv") |>
+  mutate(zawod_kod2 = factor(zawod_kod2),
+         jedna_zmiana=as.numeric(jedna_zmiana))
+head(dane)
+```
+
+
+# Przykłady
+
+## Opis funkcji `calibrate` z pakietu `survey`
+
+```
+calibrate(design, formula, population,
+       aggregate.stage=NULL, stage=0, variance=NULL,
+       bounds=c(-Inf,Inf), calfun=c("linear","raking","logit"),
+       maxit=50,epsilon=1e-7,verbose=FALSE,force=FALSE,trim=NULL,
+       bounds.const=FALSE, sparse=FALSE,...)
+```
+
+Opis wybranych argumentów:
+
++ `design` -- obiekt typu `survey.design`, który tworzymy funkcją `svydesign`,
++ `formula` -- określamy zmienne wykorzystywane do kalibracji w postaci formuły (np. `~ x1 + x2`, `list(~x1, ~x2)`),
++ `population` -- dane z populacji (wektor albo lista z wartościami),
++ `bounds` -- zakres zmienności wag,
++ `calfun` -- funkcja kalibracyjna,
++ `trim` -- czy chcemy uciąć ekstremalne wagi.
+
+## Przykład z wykorzystaniem pakietu survey
+
+1. Tworzymy podzbiór z potrzebnymi danymi, w której kolumnę `wolne_miejsca_cbop` traktujemy jako wagę wejściową ponieważ jeden wiersz odpowiada za jednen lub więcej wakatów. 
+
+```{r}
+dane |>
+  filter(is.na(id_popyt)) |>
+  select(id_jednostki, klasa_pr, sek, woj, zawod_kod2, wolne_miejsca_cbop, jedna_zmiana) -> cbop_df
+head(cbop_df)
+```
+
+
+
+2. Tworzymy obiekt `svydesign`
+
+```{r}
+cbop_svy <- svydesign(ids = ~1, 
+                      weights = ~ wolne_miejsca_cbop,
+                      data = cbop_df)
+cbop_svy
+```
+
+3. Estymator naiwny na podstawie danych jednostkowych
+
+```{r}
+svymean(~jedna_zmiana, cbop_svy)
+```
+
+
+### Kalibracja z wykorzystaniem zmiennej `klasa_pr`
+
+1. Wyznaczamy wartości globalne na potrzeby post-stratyfikacji zgodnie z wymogami funkcji `postStratify`
+
+```{r}
+pop_totals <- xtabs(wolne_miejsca*waga ~ klasa_pr, data= dane, subset = !is.na(id_popyt))
+pop_totals
+```
+
+2. Dokonujemy kalibracji
+
++ sposób 1 -- podajemy wektor z danymi (zwykle w przypadku jednej zmiennej)
+
+```{r}
+cbop_svy_cal <- calibrate(cbop_svy, 
+                          formula = ~klasa_pr, 
+                          population = c(`(Intercept)`=sum(pop_totals),
+                                         klasa_prM = 128940,
+                                         klasa_prS = 71230))
+cbop_svy_cal
+```
+
++ sposób 2 -- podajemy formułę ale musimy zapisać w formie obiektu `list`
+
+```{r}
+cbop_svy_cal <- calibrate(cbop_svy, list(~klasa_pr), population = list(pop_totals))
+cbop_svy_cal
+```
+
+3. Estymator kalibracyjny
+
+```{r}
+svymean(~jedna_zmiana, cbop_svy_cal)
+```
+
+
+### Kalibracja z wykorzystaniem większej liczby zmiennych
+
+1. Wyznaczamy wartości globalne na potrzeby kalibracji zgodnie z wymogami funkcji `calibrate` dla dwóch zmiennych
+
+```{r}
+pop_totals2 <- xtabs(wolne_miejsca*waga ~ klasa_pr + zawod_kod2, data= dane, subset = !is.na(id_popyt))
+pop_totals2
+```
+2. Sprawdzamy dla próby nielosowej
+
+```{r}
+svytable(~ klasa_pr + zawod_kod2, cbop_svy)
+```
+
+2. Dokonujemy post-stratyfikacji z wykorzystaniem dwóch zmiennych
+
+```{r}
+cbop_svy_cal2 <- calibrate(cbop_svy, 
+                           formula = list(~klasa_pr + zawod_kod2), 
+                           population = list(pop_totals2))
+cbop_svy_cal2
+```
+
+
+3. Estymator kalibracyjny
+
+```{r}
+svymean(~jedna_zmiana, cbop_svy_cal2)
+```
+
+Może się jednak zdarzyć, że dla określonych zmiennych znamy tylko wartości globalne (marginalne), a nie mamy informacji o rozkładzie łącznym. Poniżej przykład 
+
+1. Wartości globalne dla zmiennych `klasa_pr` i `zawod_kod2`
+
+```{r}
+pop_totals_kl <- xtabs(wolne_miejsca*waga ~ klasa_pr, data= dane, subset = !is.na(id_popyt))
+pop_totals_za <- xtabs(wolne_miejsca*waga ~ zawod_kod2, data= dane, subset = !is.na(id_popyt))
+pop_totals_kl
+```
+
+2. Kalibracja dla takiego przykładu
+
+```{r}
+cbop_svy_cal3 <- calibrate(cbop_svy, 
+                           formula = list(~klasa_pr, ~zawod_kod2), 
+                           population = list(pop_totals_kl, pop_totals_za))
+cbop_svy_cal3
+```
+
+3. Estymator kalibracyjny
+
+```{r}
+svymean(~jedna_zmiana, cbop_svy_cal3)
+```
+
+### Kalibracja ze zmiennymi na różnych poziomach
+
+Poniżej przedstawiam przykład, w którym kalibracji dokonuje się na dwóch różnych poziomach co nie jest możliwe w przypadku post-stratyfikacji. Celem będzie odtworzenie liczby podmiotów według ich wielkości (1 poziom) oraz liczby wakatów według wielkości podmiotów (2 poziom). Czyli będę chciał utworzyć takie wagi aby po ich zsumowaniu uzyskać zgodność zarówno w zakresie wielkości populacji referencyjnej (czyli liczby podmiotów w Polsce), jak i estymowanej liczby wolnych miejsc pracy w tych podmiotach. 
+
+Zadanie to wykonane będzie w dwóch krokach:
+
++ Krok 1: Należy dodać zestaw zmiennych określających liczbę wakatów według wielkości podmiotu do zbioru `cbop_df`. Utworzona zostanie również nowa waga odzwierciedlająca liczbę podmiotów, a nie liczbę wakatów.
++ Krok 2: Należy utworzyć specjalny wektor, który będzie zawierał wartości globalne z dwóch poziomów.
+
+1a. Określamy wielkość populacji
+
+```{r}
+wielkosc_pop <- sum(dane$waga[!is.na(dane$id_popyt)])
+wielkosc_pop
+```
+
+1b. Dodajemy zmienne 0-1 jedynkowe
+
+UWAGA: zmienna `waga` odnosi się do liczby podmiotów, a nie wakatów!!
+
+```{r}
+cbop_df <- cbop_df %>% 
+    mutate(wakaty_d = ifelse(klasa_pr == "D", wolne_miejsca_cbop, 0),
+           wakaty_m = ifelse(klasa_pr == "M", wolne_miejsca_cbop, 0),
+           wakaty_s = ifelse(klasa_pr == "S", wolne_miejsca_cbop, 0),
+           waga = wielkosc_pop/n())
+
+head(cbop_df)
+```
+
+Pokazujemy wg czego będziemy kalibrować wagi
+
+```{r}
+total_klasa_pod <- xtabs(waga ~ klasa_pr, dane, subset = !is.na(id_popyt))
+total_klasa_wak <- xtabs(waga*wolne_miejsca ~ klasa_pr,dane, subset = !is.na(id_popyt))
+
+cat("===================")
+print("Liczba podmiotów:")
+total_klasa_pod
+cat("===================")
+print("Estymowana liczba wakatów:")
+total_klasa_wak
+```
+1c. tworzymy nowy obiekt ze zmiennymi utworzonymi powyżej
+
+```{r}
+proba_nielos_svy <- svydesign(ids= ~1, weights = ~waga, data = cbop_df)
+svytotal(~wakaty_s, proba_nielos_svy)
+```
+
+2. Dokonujemy kalibracji wskazując według których zmiennych kalibrujemy oraz ich wartości globalne
+
+```{r}
+proba_nielos_svy_cal <- calibrate(design = proba_nielos_svy, 
+                                  formula = ~klasa_pr+wakaty_d+wakaty_m+wakaty_s,
+                                  population = c(
+                                    "(Intercept)" = sum(total_klasa_pod),  ## liczba podmiotów ogółem
+                                    "klasa_prM" = unname(total_klasa_pod[2]), ## liczba podmiotów małych
+                                    "klasa_prS" = unname(total_klasa_pod[3]), ## liczba podmiotów srednich 
+                                    "wakaty_d" = unname(total_klasa_wak[1]), ## liczba wakatów w duzych podmiotach
+                                    "wakaty_m" = unname(total_klasa_wak[2]), ## liczba wakatow w małych podmiotach
+                                    "wakaty_s" = unname(total_klasa_wak[3])) ## liczba wakatow w średnich podmiotach
+                                    ) 
+```
+
+
+Wyznaczamy liczbę wakatów z wykorzystaniem zmiennej `wolne_miejsca_cbop` według zmiennej `jedna_zmiana`
+
+```{r}
+res <- svyby(~wolne_miejsca_cbop, ~jedna_zmiana, proba_nielos_svy_cal, svytotal)
+res
+```
+Ostatecznie interesujący nas odsetek wynosi (co jest wyższe od naiwnego wynoszącego około 52%)
+
+```{r}
+weighted.mean(res$jedna_zmiana,res$wolne_miejsca_cbop)
+```
+
+# Badanie symulacyjne
+
+## Definicja procesu generowania danych
+
+Rozważmy następujący układ:
+
++ Wielkość populacji $N=10000$
++ Dwie cechy $X$:
+
+$$
+\begin{align}
+X_1 & \sim \text{Bernoulli}(0.7) \\
+X_2 & \sim \text{Bernoulli}(0.9)  \\
+\end{align}
+$$
++ Model dla cechy Y 
+
+$$
+Y = 4.5 - 3.5X_1 + 0.5X_2 + \epsilon; \quad \epsilon \sim N(0,1)
+$$
+
++ Próba nielosowa o wielkości $n_b=1000$ jest generowana proporcjonalnie do cechy $Y$, gdzie prawdopodobieństwo wylosowania danego rekordu określone jest w następujący sposób:
+
+$$
+P(R_i = 1) = \frac{|y_i|}{\sum_{i=1}^N |y_i|}
+$$
+Dla tak uzyskanej próby nielosowej należy:
+
++ ocenić różnice w rozkładach X między próbą, a populacją,
++ ocenić zależność między cechą X1 i X2
++ dokonać post-stratyfikacji z wykorzystaniem pakietu `survey`.
+
+## Rozwiązanie
+
+Kod R do generowania danych
+
+```{r}
+set.seed(2023)
+N <- 10000
+nb <- 1000
+X1 <- rbinom(N, 1, 0.7)
+X2 <- rbinom(N, 1, 0.9)
+Y <- 4.5 - 3.5*X1+0.5*X2 + rnorm(N)
+nb_inds <- sample(1:N, size = nb, prob = abs(Y)/sum(abs(Y)))
+flag <- 1:N %in% nb_inds
+w_star <- N/nb ## dodajemy pseudo-wagę jako relację miedzy N / nb
+df <- data.frame(Y,X1,X2,flag,w_star)
+head(df)
+```
+
+Porównajmy rozkłady $X_1$ i $X_2$
+
+```{r}
+pop_X1 <- mean(df$X1)
+pop_X2 <- mean(df$X2)
+sam_X1 <- mean(df$X1[df$flag == 1])
+sam_X2 <- mean(df$X2[df$flag == 1])
+c(X1_pop = pop_X1, X2_pop = pop_X2, X1_proba = sam_X1, X2_proba = sam_X2)
+```
+
+Rozkład łączny $X_1$ i $X_2$ -- różnica w odsetkach między próbą, a populacją.
+
+```{r}
+prop.table(xtabs(~X1 + X2, df, subset = flag == T)) - prop.table(xtabs(~X1 + X2, df)) 
+```
+Jaka jest zależność między $Y$, a $X_1$ oraz $X_2$? 
+
+```{r}
+m1 <- lm(Y ~ X1 + X2, data = df, subset = flag == TRUE)
+summary(m1)
+```
+Funkcją anova możemy sprawdzić jak dana zmienna wpływa na redukcję sumy kwadratów odchyleń (SSQ).
+
+```{r}
+anova(m1)
+```
+
+Wnioski:
+
++   główna rozbieżność w zmiennej $X_1$, w $X_2$ niezbyt,
++ zmienna $X_1$ jest silniej skorelowana z $Y$ niż $X_2$.
+
+Dokonujemy kalibracji i kalibracji wg dwóch zmiennych
+
+```{r}
+df$X1 <- as.factor(df$X1)
+df$X2 <- as.factor(df$X2)
+totale <- xtabs(~X1 + X2, data = df)
+dd <- svydesign(ids= ~1, weights = ~w_star, data = subset(df, flag == T))
+dd2 <- calibrate(dd, formula= list(~X1+X2), population = list(totale))
+c(Y_prawda = mean(Y), Y_bez_cal = svymean(~Y, dd)[1], Y_cal = svymean(~Y, dd2)[1])
+```
+
+Jeżeli użyjemy wyłącznie $X_1$ uzyskamy następujące wyniki
+
+```{r}
+totale <- xtabs(~X1 , data = df)
+dd <- svydesign(ids= ~1, weights = ~w_star, data = subset(df, flag == T))
+dd2 <- calibrate(dd, formula= list(~X1), population = list(totale))
+c(Y_prawda = mean(Y), Y_bez_cal = svymean(~Y, dd)[1], Y_cal = svymean(~Y, dd2)[1])
+```
+
+Jeżeli użyjemy wyłącznie $X_2$ uzyskamy następujące wyniki
+
+
+```{r}
+totale <- xtabs(~X2 , data = df)
+dd <- svydesign(ids= ~1, weights = ~w_star, data = subset(df, flag == T))
+dd2 <- postStratify(dd, strata= ~X2, population = totale)
+c(Y_prawda = mean(Y), Y_bez_ps = svymean(~Y, dd)[1], Y_ps = svymean(~Y, dd2)[1])
+```
+
+Wnioski:
+
++ użycie $X_1$ redukuje obciązenie, a $X_2$ nie wpływa na wyniki,
++ zredukowano obciążenie ale częściowo dlatego, że dobór próby był wyłącznie zależny od cechy Y, a nie od X1 i X2.
+
+Wykonajmy to ćwiczenie 500 razy
+
+```{r}
+set.seed(1234)
+R <- 500
+y_naive <- numeric(R)
+y_ps <- numeric(R)
+y_cal <- numeric(R)
+totale <- xtabs(~X1+X2 , data = df)
+for (r in 1:500) {
+  nb_inds <- sample(1:N, size = nb, prob = abs(Y)/sum(abs(Y)))
+  flag <- 1:N %in% nb_inds
+  w_star <- N/nb ## dodajemy pseudo-wagę jako relację miedzy N / nb
+  df <- data.frame(Y,X1,X2,flag,w_star)
+  df$X1 <- as.factor(df$X1)
+  df$X2 <- as.factor(df$X2)
+  dd <- svydesign(ids= ~1, weights = ~w_star, data = subset(df, flag == T))
+  dd2 <- postStratify(dd, strata= ~X1+X2, population = totale)
+  dd3 <- calibrate(dd, formula= list(~X1+X2), population = list(totale))
+  
+  
+  y_naive[r] <- svymean(~Y, dd)[1]
+  y_ps[r] <- svymean(~Y, dd2)[1]
+  y_cal[r] <- svymean(~Y, dd2)[1]
+}
+
+boxplot((cbind("Naiwny"=y_naive, "PS"=y_ps, "Kalibracyjny"=y_cal) - mean(Y))/mean(Y)*100, 
+        xlab = "Estymator", ylab = "Relatywne obciążenie (w %)",
+        ylim = c(0, 70))
+
+```
+
+Wyniki symulacji
+
+```{r}
+oszacowanie <- c(mean(y_naive), mean(y_ps), mean(y_cal))
+obciazenie <- oszacowanie -mean(Y)
+wariancja <- c(var(y_naive), var(y_ps), var(y_cal))
+rmse <- sqrt(obciazenie^2+wariancja)
+data.frame(estymator=c("Naiwny", "PS", "Kalibracyjny"), oszacowanie, obciazenie, wariancja, rmse)
+```
+
+
+# Podsumowanie

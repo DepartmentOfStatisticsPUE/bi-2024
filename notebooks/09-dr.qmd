@@ -1,0 +1,96 @@
+---
+title: "Podwójnie odporne estymatory"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+toc-title: Spis treści
+lang: pl
+---
+
+
+Wczytujemy pakiet `tidyverse`.
+
+```{r}
+library(tidyverse)
+library(survey)
+library(nonprobsvy)
+```
+
+Wczytujemy dane na potrzeby zajęć oraz dodajemy nowe zmienne:
+
+-   `R` -- informacja czy rekord przynależy do zbioru CBOP
+-   `waga_do_modelu` -- zmienna, którą wykorzystamy do określenia, że
+    dany rekord dotyczy więcej niż jednego wakatu
+
+```{r}
+dane <- read_csv("../data/popyt-zajecia-dane.csv") |>
+  mutate(zawod_kod2 = factor(zawod_kod2),
+         sek = as.factor(sek),
+         jedna_zmiana=as.numeric(jedna_zmiana),
+         R = is.na(id_popyt),
+         waga_do_modelu = ifelse(is.na(id_popyt), wolne_miejsca_cbop, wolne_miejsca*waga))
+head(dane)
+```
+
+
+1. Budujemy model regresji logistycznej (IPW)
+
+```{r}
+model_ps <- glm(formula = R ~ sek + klasa_pr  + woj + sekc_pkd+  zawod_kod2,
+                data = dane,
+                family = binomial(),
+                weights = waga_do_modelu)
+
+summary(model_ps)
+```
+2. Budujemy model dla Y (mass imputation)
+```{r}
+model_y <- glm(formula = jedna_zmiana ~ sek + klasa_pr  + woj + sekc_pkd+  zawod_kod2,
+               data = dane,
+               subset = R == TRUE,
+               family = binomial(),
+               weights = waga_do_modelu)
+summary(model_y)
+```
+```{r}
+dane <- dane %>%
+  mutate(rho_hat = predict(model_ps, dane, type = "response"),
+         w_hat = 1/ rho_hat,
+         m_hat = predict(model_y, dane, type = "response"))
+head(dane)
+```
+
+```{r}
+dr_part1 <- dane %>%
+  filter(R == TRUE) %>%
+  summarise(theta_hat = weighted.mean(jedna_zmiana - m_hat, w_hat)) %>%
+  pull(theta_hat)
+
+dr_part2 <- dane %>%
+  filter(R == FALSE) %>%
+  summarise(theta_hat = weighted.mean(m_hat, waga_do_modelu)) %>%
+  pull(theta_hat)
+
+naive <- dane %>%
+  filter(R == TRUE) %>%
+  summarise(theta_hat = weighted.mean(jedna_zmiana, waga_do_modelu)) %>%
+  pull(theta_hat)
+
+ps <- dane %>%
+  filter(R == TRUE) %>%
+  summarise(theta_hat = weighted.mean(jedna_zmiana, w_hat)) %>%
+  pull(theta_hat)
+
+results <- c(dr_part1 = dr_part1, dr_part2 = dr_part2, theta_dr = dr_part1+dr_part2, naive = naive, ps = ps, mi = dr_part2)
+
+print(results)
+```
+

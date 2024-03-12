@@ -1,0 +1,226 @@
+---
+title: "Metody quasi-randomizacyjne: propensity score weighting / inverse probability weighting"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: true
+    df-print: kable
+editor: visual
+execute: 
+  eval: true
+  warning: false
+  message: false
+toc-title: Spis treści
+lang: pl
+---
+
+# Wprowadzenie
+
+Zainstalujemy potrzebne pakiety
+
+```{r}
+library(remotes)
+```
+
+```{r eval = FALSE}
+install_github("ncn-foreigners/nonprobsvy")
+```
+
+Wczytujemy pakiet `tidyverse`.
+
+```{r}
+library(tidyverse)
+library(survey)
+library(nonprobsvy)
+```
+
+Wczytujemy dane na potrzeby zajęć oraz dodajemy nowe zmienne:
+
+-   `R` -- informacja czy rekord przynależy do zbioru CBOP
+-   `waga_do_modelu` -- zmienna, którą wykorzystamy do określenia, że
+    dany rekord dotyczy więcej niż jednego wakatu
+
+```{r}
+dane <- read_csv("../data/popyt-zajecia-dane.csv") |>
+  mutate(zawod_kod2 = factor(zawod_kod2),
+         sek = as.factor(sek),
+         jedna_zmiana=as.numeric(jedna_zmiana),
+         R = is.na(id_popyt),
+         waga_do_modelu = ifelse(is.na(id_popyt), wolne_miejsca_cbop, wolne_miejsca*waga))
+head(dane)
+```
+
+# Przykłady
+
+W poniższych przykładach zakładamy:
+
+-   zmienne X takie jak sektor, klasa_pr, sekc_pkd, woj oraz zawod_kod2
+    są mierzone bez błędów,
+-   zakładamy, że jednostki oraz ich wolne miejsca pracy występują
+    wyłącznie w jednym zbiorze danych,
+-   R=1 oznacza czy wakat pojawił się w CBOP, 0 w przeciwnym wypadku,
+-   w regresji logistycznej wykorzystamy zmienne dotyczące zarówno
+    charakterystyk podmiotów, jak i wakatów (`zawod_kod2`).
+
+## Wykorzystanie regresji logistycznej -- jedna zmienna
+
+1.  Budujemy model regresji logistycznej
+
+```{r}
+model1 <- glm(
+  formula = R ~ klasa_pr,
+  data = dane,
+  weights = waga_do_modelu,
+  family = binomial()
+)
+summary(model1)
+```
+
+2.  Wyciągamy informację o prawdopodobieństwach przynależności
+
+```{r}
+est_probs <- fitted(model1)
+table(est_probs)
+```
+
+Wagi
+
+```{r}
+table(1/est_probs)
+```
+
+3.  Dodajemy informację o wagach do zbioru danych
+
+```{r}
+dane <- dane |> 
+  mutate(waga_estym = 1/predict(model1, dane, type="response"))
+```
+
+4.  Estymujemy liczbę wolnych miejsc pracy
+
+```{r}
+dane |> 
+  filter(R == TRUE) |>
+  summarise(estymator_ipw = weighted.mean(jedna_zmiana, waga_estym),
+            suma_wag = sum(waga_estym))
+```
+
+5.  Czy wagi otwarzają liczbę wolnych miejsc pracy wg tej zmiennej?
+
+```{r}
+dane |>
+  filter(R == TRUE) |> 
+  count(klasa_pr, wt  = waga_estym)
+```
+
+Powinno być
+
+```{r}
+pop_totals <- xtabs(wolne_miejsca*waga ~ klasa_pr, data= dane, subset = !is.na(id_popyt))
+pop_totals
+```
+
+6.  Post-stratyfikacja po regresji logistycznej
+
+```{r}
+dane_ipw <- dane |>
+  filter(R == TRUE) |>
+  add_count(klasa_pr, wt = waga_estym, name = "total") |>
+  mutate(total_ipw = case_when(klasa_pr == "D" ~ (94124/total),
+                              klasa_pr == "S" ~ 128940/total,
+                              klasa_pr == "M" ~ 71230/total),
+         waga_ipw = waga_estym*total_ipw) 
+head(dane_ipw)
+```
+
+7.  Wynik po propensity score weighting / inverse probability weighting
+    i post-stratyfikacji
+
+```{r}
+dane_ipw |> 
+  summarise(estymator_ipw = weighted.mean(jedna_zmiana, waga_estym),
+            estymator_ipw_cal = weighted.mean(jedna_zmiana, waga_ipw),
+            suma_wag = sum(waga_estym),
+            suma_wag_ipw = sum(waga_ipw))
+```
+
+## Wykorzystanie regresji logistycznej -- więcej zmiennych
+
+1.  Budujemy model regresji logistycznej
+
+```{r}
+model2 <- glm(
+  formula = R ~ klasa_pr + sek + sekc_pkd + woj + zawod_kod2,
+  data = dane,
+  weights = waga_do_modelu,
+  family = binomial()
+)
+summary(model2)
+```
+
+2.  Wyciągamy informację o prawdopodobieństwach przynależności
+
+```{r}
+est_probs <- fitted(model2)
+summary(est_probs)
+```
+
+Wagi
+
+```{r}
+summary(1/est_probs)
+```
+
+3.  Dodajemy informację o wagach do zbioru danych
+
+```{r}
+dane <- dane |> 
+  mutate(waga_estym = 1/predict(model2, dane, type="response"))
+```
+
+4.  Estymujemy liczbę wolnych miejsc pracy
+
+```{r}
+dane |> 
+  filter(R == TRUE) |>
+  summarise(estymator_ipw = weighted.mean(jedna_zmiana, waga_estym),
+            suma_wag = sum(waga_estym))
+```
+
+5.  Korekta wag z wykorzystaniem kalibracji
+
+```{r}
+pop_totals_klasa <- xtabs(wolne_miejsca*waga ~ klasa_pr, data= dane, subset = !is.na(id_popyt))
+pop_totals_sek <- xtabs(wolne_miejsca*waga ~ sek, data= dane, subset = !is.na(id_popyt))
+pop_totals_pkd <- xtabs(wolne_miejsca*waga ~ sekc_pkd, data= dane, subset = !is.na(id_popyt))
+pop_totals_woj <- xtabs(wolne_miejsca*waga ~ woj, data= dane, subset = !is.na(id_popyt))
+pop_totals_kod <- xtabs(wolne_miejsca*waga ~ zawod_kod2, data= dane, subset = !is.na(id_popyt))
+```
+
+```{r}
+cbop_svy <- svydesign(ids= ~1, 
+                      weights = ~ waga_estym,
+                      data = subset(dane,R == T))
+```
+
+```{r}
+#klasa_pr + sek + sekc_pkd + woj + zawod_kod2
+cbop_svy_cal <- calibrate(cbop_svy, 
+                          formula = list(~klasa_pr, ~zawod_kod2, ~woj, ~sekc_pkd, ~sek),
+                          population = list(pop_totals_klasa, pop_totals_kod, 
+                                            pop_totals_woj, pop_totals_pkd,
+                                            pop_totals_sek), 
+                          calfun = cal.raking)
+
+svymean(~jedna_zmiana, cbop_svy_cal)
+```
+
+```{r}
+svymean(~jedna_zmiana, cbop_svy)
+svymean(~jedna_zmiana, cbop_svy_cal)
+```
+
+# Wykorzystanie pakietu `nonprobsvy`
+
+# Badanie symulacyjne
