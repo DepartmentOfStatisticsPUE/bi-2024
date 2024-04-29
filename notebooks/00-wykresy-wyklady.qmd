@@ -38,7 +38,7 @@ dane %>%
   mutate(eu = countrycode(geo, origin = "country.name", destination = "eu28")) %>%
   filter(!is.na(eu)) %>%
   filter(indic_is == 'Last internet use: in last 3 months' , 
-         year(time) %in% 2005:2022,
+         year(time) %in% 2005:2023,
          #geo %in% c('Poland', "Czechia", "Hungary", "Slovakia", "Slovenia"),
          ind_type %in% c('All Individuals', 'Individuals, 16 to 24 years old',
            'Individuals, 25 to 34 years old',
@@ -80,7 +80,7 @@ dane %>%
   mutate(eu = countrycode(geo, origin = "country.name", destination = "eu28")) %>%
   filter(!is.na(eu)) %>%
   filter(indic_is == 'Last internet use: in last 3 months' , 
-         year(time) %in% 2005:2022,
+         year(time) %in% 2005:2023,
          geo %in% c('Poland', "Czechia", "Hungary", "Slovakia", "Slovenia"),
          ind_type %in% c('All Individuals', 'Individuals, 16 to 24 years old',
            'Individuals, 25 to 34 years old',
@@ -119,7 +119,7 @@ dane %>%
   mutate(eu = countrycode(geo, origin = "country.name", destination = "eu28")) %>%
   filter(!is.na(eu)) %>%
   filter(indic_is == 'Last internet use: in last 3 months' , 
-         year(time) %in% 2005:2022,
+         year(time) %in% 2005:2023,
          geo %in% c('Poland', "Estonia", "Netherlands", "France", "Italy", "Spain", "Finland"),
          ind_type %in% c('All Individuals', 'Individuals, 16 to 24 years old',
            'Individuals, 25 to 34 years old',
@@ -152,4 +152,3 @@ ggsave(filename = "../wykresy/6-eurostat-inne.png", width = 8, height = 4)
 p
 
 ```
-

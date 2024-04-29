@@ -1,0 +1,237 @@
+---
+title: "Symulacje na potrzeby projektu z badań internetowych"
+author: "Maciej Beręsewicz"
+output:
+  html_document:
+    df_print: paged
+    toc: yes
+    number_sections: true
+editor_options: 
+  markdown: 
+    wrap: 100
+---
+
+# Symulacje
+
+Każda grupa projektowa przesyła kod poszczególnych symulacji przez moodle do *11.05 (23:59)*.
+
+Wymagania dot. pliku:
+
+-   plik powiniem nazywać się: *grupa-NR* i mieć jedno z następujących rozszerzeń:
+    `.R, .RMD, .QMD, .PY, .IPYNB, .JL`,
+-   plik powiniem zawierać komentarze abym mógł zrozumieć co się tam dzieje,
+-   jeżeli plik wykorzystuje biblioteki należy je załadować na samym początku,
+-   W razie pytań proszę o kontakt,
+-   dla każdej symulacji ustawić `set.seed(2024)`.
+
+## Symulacja 1
+
+### Informacje o symulacji
+
+-   $N=100,000$ -- wielkość populacji.
+-   Liczba powtórzeń symulacji 500.
+
+### Zmienne pomocnicze
+
+-   wygenerować dwie zmienne $X_1$ i $X_2$ niezależnie z $N(1,1)$ i utworzyć następującą macierz
+    (dane umowne)
+
+$$
+\mathbf{X}=
+\begin{bmatrix}
+1 & -0.234 & 0.325 \\
+1 & 0.434 & -0.244 \\
+... & ... & -1.24 \\
+1 & -0.532 &  1.45 
+\end{bmatrix}
+$$
+
+### Zmienna celu
+
+-   Dwie zmienne celu $Y_1$ i $Y_2$
+
+-   Ciągła: $$
+          Y_1 = \beta_0 + \beta_1X_1 + \beta_2X_2 + \epsilon
+    $$ gdzie $\mathbf{\beta}=(1, 1, -1)$ i $\epsilon\sim N(0,1)$.
+
+-   Binarna: $$
+    Y_2 \sim \text{Ber}(\pi_Y(X))\; \text{gdzie}\; \text{logit}(\pi_Y(X)) = -1 + 2 X_2
+    $$ gdzie $\text{Ber}()$ oznacza rozkład Bernoulliego.
+
+### Selekcja do próby nielosowej ($S_A$)
+
+-   Selekcja do próby nielosowej (uwaga wielkość próby będzie losowa!):
+
+$$
+\text{logit}(\pi_{B,i}) = 3.5 + \mathbf{\alpha}^T\mathbf{X}_i
+$$
+
+gdzie $\mathbf{\alpha}=(0,3,-3)^T$.
+
+### Selekcja do próby losowej ($S_B$)
+
+-   Selekcja do próby losowej ($S_B$) o liczebności 1,000 przez losowanie proste ze zwracaniem.
+
+
+## Symulacja 2
+
+### Informacje o symulacji
+
+-   $N=10,000$ -- wielkość populacji.
+-   Liczba powtórzeń symulacji 500.
+
+### Zmienne pomocnicze
+
+-   $p=5$ -- liczba zmiennych $X_p$ gdzie $p-1$ zmiennych generowanych jest z rozkładu $N(0,1)$
+    (pierwsza kolumna tej macierzy to stała, wyraz wolny). Poniżej przykład jak powinna wygladać ta
+    macierz (liczby umowne, wymiar macierzy $N \times p$).
+
+$$
+X=
+\begin{bmatrix}
+1 & -0.234 & ... &  0.325\\
+1 & 0.434 & ...  &  -0.244 \\
+... & ... & ...  & -1.24 \\
+1 & -0.532 & ...  & 1.45 
+\end{bmatrix}
+$$
+
+### Zmienna celu
+
+-   Dwie zmienne celu $Y_1$ i $Y_2$
+
+-   Ciągła: $$
+          Y_1 = 1 + \exp(3 + X_{4i} + X_{5i} + \epsilon
+    $$ gdzie $\epsilon\sim N(0,1)$.
+
+-   Binarna: $$
+    Y_2 \sim \text{Ber}(\pi_Y(X))\; \text{with}\; \text{logit}(\pi_Y(X)) = \mathbf{\beta}^TX_i
+    $$ gdzie $\mathbf{\beta}=(1,0,0,-1,1)^T$ oraz $\text{Ber}$ oznacza rozkład
+    Bernoulliego.
+
+### Selekcja do próby nielosowej ($S_A$)
+
+-   Selekcja do próby nielosowej ($S_A$, uwaga wielkość próby będzie losowa!):
+
+$$
+\text{logit}(\pi_{B,i}) = 3.5 - \sin(X_{2i} + X_{3i}) - X_{4i} - X_{5i}
+$$
+
+Przykładowo $X_{2i}$ oznacza 3 kolumnę macierzy $\mathbf{X}$
+
+### Selekcja do próby losowej ($S_B$)
+
+-   Selekcja do próby losowej ($S_B$) o liczebności 1,000:
+-   losowanie proste z warstwowaniem
+-   2 warstwy utworzone według następującej kombinacji 2 zmiennych:
+
+$$
+\begin{cases}
+\text{Warstwa 1} & = X_1 < 0.5\\
+\text{Warstwa 2} & = X_1 \geq 0.5\\
+\end{cases}
+$$
+
+-   liczebność próby w poszczególnych warstwach wynosi: 700, 300,
+
+-   prawdopodobieństwo inkluzji dla każdej warstwy wynosi:
+    $\pi_w=(\frac{7}{100}, \frac{3}{100})$,
+
+-   każdej wylosowanej jednostce należy przypisać wagę $d_i$ będącą odwrotnością inkluzji warstwy, w
+    której się znajduje.
+    
+## Symulacja 3
+
+### Informacje o symulacji
+
+-   $N=10,000$ -- wielkość populacji.
+-   Liczba powtórzeń symulacji 500.
+
+### Zmienne pomocnicze
+
+-   $p=15$ -- liczba zmiennych $X_p$ gdzie $p-1$ zmiennych generowanych jest z rozkładu $N(0,1)$
+    (pierwsza kolumna tej macierzy to stała, wyraz wolny). Poniżej przykład jak powinna wygladać ta
+    macierz (liczby umowne, wymiar macierzy $N\times p$).
+
+$$
+X=
+\begin{bmatrix}
+1 & -0.234 & ... &  0.325 \\
+1 & 0.434 & ...  &  -0.244\\
+... & ... & ...  & -1.24 \\
+1 & -0.532 & ...  & 1.45 
+\end{bmatrix}
+$$
+
+### Zmienna celu
+
+-   Dwie zmienne celu $Y_1$ i $Y_2$
+
+-   Ciągła: $$
+          Y_1 = 1 + \exp(3\sin(\mathbf{\beta}^T\mathbf{X}_i)) + X_{5i} + X_{6i} + \epsilon
+    $$ gdzie $\mathbf{\beta}=(1,0,0,1/2,-1/2,1/2,-1/2,0,...,0)^T$ i $\epsilon\sim N(0,1)$.
+
+-   Binarna: $$
+    Y_2 \sim \text{Ber}(\pi_Y(X))\; \text{with}\; \text{logit}(\pi_Y(X)) = \mathbf{\beta}^TX_i
+    $$ gdzie $\mathbf{\beta}=(1,0,0,-1,1,-1,1,0,...,0)^T$ oraz $\text{Ber}$ oznacza rozkład
+    Bernoulliego.
+
+### Selekcja do próby nielosowej ($S_A$)
+
+-   Selekcja do próby nielosowej ($S_A$, uwaga wielkość próby będzie losowa!):
+
+$$
+\text{logit}(\pi_{B,i}) = (3.5 + \mathbf{\alpha}^T(\log(\mathbf{X}_i)^2) - \sin(X_{3i} + X_{4i}) - X_{5i} - X_{6i})
+$$
+
+gdzie $\mathbf{\alpha}=(0,0,0,3,-3,3,-3,0,...,0)^T$. Przykładowo $X_{3i}$ oznacza 3 kolumnę macierzy
+X.
+
+### Selekcja do próby losowej ($S_B$)
+
+-   Selekcja do próby losowej ($S_B$) o liczebności 1,000:
+-   losowanie proste z warstwowaniem
+-   4 warstwy utworzone według następującej kombinacji 2 zmiennych:
+
+$$
+\begin{cases}
+\text{Warstwa 1} & = X_2 < 0.5 & X_4 < 0,\\
+\text{Warstwa 2} & = X_2 \geq 0.5 & X_4 < 0,\\
+\text{Warstwa 3} & = X_2 < 0.5 & X_4 \geq 0,\\
+\text{Warstwa 4} & = X_2 \geq 0.5 & X_4 \geq 0,\\
+\end{cases}
+$$
+
+-   liczebność próby w poszczególnych warstwach wynosi: 100, 200, 300, 400,
+
+-   prawdopodobieństwo inkluzji dla każdej warstwy wynosi:
+    $\pi_w=(\frac{1}{100}, \frac{2}{100}, \frac{3}{100}, \frac{4}{100})$,
+
+-   każdej wylosowanej jednostce należy przypisać wagę $d_i$ będącą odwrotnością inkluzji warstwy, w
+    której się znajduje.
+
+# Raporty dla każdej symulacji
+
+W każdym przebiegu:
+
+-   należy zapisać średnią $Y_1$ i $Y_2$ z próby nielosowej $S_A$,
+-   należy zadeklarować obiekt `svydesign` dla próby losowej $S_B$ uwzględniając argument `strata`
+    określający warstwę oraz wyznaczyć oszacowanie średniej $Y_1$ i $Y_2$.
+
+Po każdej symulacji należy zaraportować dla $Y_1$ i $Y_2$ oddzielnie symulacyjne:
+
+-   Obciązenie
+
+$$
+\text{Bias} = \bar{\hat{\mu}}_Y - \mu_Y
+$$ gdzie $\bar{\hat{\mu}}_Y= \left(\frac{1}{R} \sum_{r=1}^{R} \hat{\mu}_{r,Y}\right)$
+
+-   Wariancję
+
+$$
+\text{Var} = \sqrt{\frac{\left(\sum_{r=1}^{R} \hat{\mu}_{r,Y} - \bar{\hat{\mu}}_Y \right)^2}{n}}
+$$ + RMSE
+
+$$
+\text{RMSE} = \sqrt{\text{Bias}^2 + \text{Var}} 
+$$

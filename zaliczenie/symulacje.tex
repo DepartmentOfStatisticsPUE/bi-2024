@@ -1,0 +1,223 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+%
+\documentclass[
+]{article}
+\usepackage{amsmath,amssymb}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx}
+\makeatletter
+\def\maxwidth{\ifdim\Gin@nat@width>\linewidth\linewidth\else\Gin@nat@width\fi}
+\def\maxheight{\ifdim\Gin@nat@height>\textheight\textheight\else\Gin@nat@height\fi}
+\makeatother
+% Scale images if necessary, so that they will not overflow the page
+% margins by default, and it is still possible to overwrite the defaults
+% using explicit options in \includegraphics[width, height, ...]{}
+\setkeys{Gin}{width=\maxwidth,height=\maxheight,keepaspectratio}
+% Set default figure placement to htbp
+\makeatletter
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\ifLuaTeX
+  \usepackage{selnolig}  % disable illegal ligatures
+\fi
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Symulacje na potrzeby projektu z badań internetowych},
+  pdfauthor={Maciej Beręsewicz},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Symulacje na potrzeby projektu z badań internetowych}
+\author{Maciej Beręsewicz}
+\date{}
+
+\begin{document}
+\maketitle
+
+\section{Symulacje}\label{symulacje}
+
+Każda grupa projektowa przesyła kod poszczególnych symulacji przez
+moodle do \emph{11.05 (23:59)}.
+
+Wymagania dot. pliku:
+
+\begin{itemize}
+\tightlist
+\item
+  plik powiniem nazywać się: \emph{grupa-NR} i mieć jedno z
+  następujących rozszerzeń:
+  \texttt{.R,\ .RMD,\ .QMD,\ .PY,\ .IPYNB,\ .JL},
+\item
+  plik powiniem zawierać komentarze abym mógł zrozumieć co się tam
+  dzieje,
+\item
+  jeżeli plik wykorzystuje biblioteki należy je załadować na samym
+  początku.
+\item
+  W razie pytań proszę o kontakt
+\end{itemize}
+
+\subsection{Symulacja 1}\label{symulacja-1}
+
+\subsection{Symulacja 2}\label{symulacja-2}
+
+\subsection{Symulacja 3}\label{symulacja-3}
+
+\subsubsection{Informacje o symulacji}\label{informacje-o-symulacji}
+
+\begin{itemize}
+\tightlist
+\item
+  \(N=10,000\) -- wielkość populacji,
+\end{itemize}
+
+\subsubsection{Zmienne pomocnicze}\label{zmienne-pomocnicze}
+
+\begin{itemize}
+\tightlist
+\item
+  \(p=15\) -- liczba zmiennych \(X_p\) gdzie \(p-1\) zmiennych
+  generowanych jest z rozkładu \(N(0,1)\) (pierwsza kolumna tej macierzy
+  to stała, wyraz wolny). Poniżej przykład jak powinna wygladać ta
+  macierz (liczby przykładowe.)
+\end{itemize}
+
+\[
+X=
+\begin{bmatrix}
+1 & -0.234 & ... &  0.325 & \\
+1 & 0.434 & ...  &  -0.244 & \\
+... & ... & ...  & -1.24 & \\
+1 & -0.532 & ...  & 1.45 & 
+\end{bmatrix}
+\]
+
+\subsection{Zmienna celu}\label{zmienna-celu}
+
+\begin{itemize}
+\item
+  Dwie zmienne celu \(Y_1\) i \(Y_2\)
+\item
+  Ciągła: \[
+        Y_1 = 1 + \exp(3\sin(\mathbf{\beta}^T\mathbf{X}_i)) + X_{5i} + X_{6i} + \epsilon
+        \] gdzie \(\mathbf{\beta}=(1,0,0,1/2,-1/2,1/2,-1/2,0,...,0)^T\)
+\item
+  Binarna:
+  \[Y_2 \sim \text{Ber}(\pi_Y(X))$ with $\text{logit}(\pi_Y(X)) = \mathbf{\beta}^TX_i
+        \] gdzie \(\mathbf{\beta}=(1,0,0,-1,1,-1,1,0,...,0)^T\).
+\end{itemize}
+
+\subsubsection{Próby}\label{pruxf3by}
+
+\begin{itemize}
+\tightlist
+\item
+  \(S_A\) -- próba nielosowa (nieprobabilistyczna),
+\item
+  \(S_B\) -- próba losowa (probabilistyczna).
+\end{itemize}
+
+\subsubsection{Selekcja do próby
+nielosowej}\label{selekcja-do-pruxf3by-nielosowej}
+
+\begin{itemize}
+\tightlist
+\item
+  Selekcja do próby nielosowej (\(S_A\), uwaga wielkość próby będzie
+  losowa!):
+\end{itemize}
+
+\[
+\text{logit}(\pi_{B,i}) = (3.5 + \mathbf{\alpha}^T(\log(\mathbf{X}_i)^2) - \sin(X_{3i} + X_{4i}) - X_{5i} - X_{6i})
+\]
+
+gdzie \(\mathbf{\alpha}=(0,0,0,3,-3,3,-3,0,...,0)^T\). Przykładowo
+\(X_{3i}\) oznacza 3 kolumnę macierzy X.
+
+\subsubsection{Selekcja do próby
+losowej}\label{selekcja-do-pruxf3by-losowej}
+
+\begin{itemize}
+\tightlist
+\item
+  Selekcja do próby losowej (\(S_B\)) o liczebności 1,000:
+\item
+  losowanie proste z warstwowaniem
+\item
+  4 warstwy utworzone według następującej kombinacji 2 zmiennych:
+\end{itemize}
+
+\[
+\begin{cases}
+\text{Warstwa 1} & = X_2 < 0.5 & X_4 < 0,\\
+\text{Warstwa 2} & = X_2 >= 0.5 & X_4 < 0,\\
+\text{Warstwa 3} & = X_2 < 0.5 & X_4 >= 0,\\
+\text{Warstwa 4} & = X_2 > 0.5 & X_4 >= 0,\\
+\end{cases}
+\]
+
+\begin{itemize}
+\item
+  liczebność próby w poszczególnych warstwach wynosi: 100, 200, 300,
+  400,
+\item
+  prawdopodobieństwo inkluzji dla każdej warstwy wynosi:
+  \(\pi_w=(\frac{1}{100}, \frac{2}{100}, \frac{3}{100}, \frac{4}{100})\),
+\item
+  każdej wylosowanej jednostce należy przypisać wagę \(d_i\) będącą
+  odwrotnością inkluzji warstwy, w której się znajduje.
+\end{itemize}
+
+\subsubsection{Procedura symulacji}\label{procedura-symulacji}
+
+Procedurę należy powtórzyć 500 razy, w każdym przebiegu:
+
+\begin{itemize}
+\tightlist
+\item
+  należy zapisać średnią \(Y_1\) i \(Y_2\) z próby nielosowej \(S_A\),
+\item
+  należy zadeklarować obiekt \texttt{svydesign} dla próby losowej
+  \(S_B\) uwzględniając argument \texttt{strata} określający warstwę.
+\end{itemize}
+
+\end{document}

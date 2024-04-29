@@ -19,17 +19,12 @@ lang: pl
 
 ## Omówienie
 
--   Celem badania było zweryfikowanie skuteczności metod estymacji w
-    przypadku prób nielosowych.
--   Metody zaproponowane przez Kim'a i Wang'a (2018) zakładają istnienie
-    dwóch prób: losowej (o liczebności 500 lub 1 000) oraz nielosowej.
--   Próba losowa została wylosowania stosując losowanie proste bez
-    zwracania.
--   Przynależność do próby losowej wylosowano zgodnie z rozkładem
-    Bernulliego ($\delta_i \sim Bern(p_i)$)
+-   Celem badania było zweryfikowanie skuteczności metod estymacji w przypadku prób nielosowych.
+-   Metody zaproponowane przez Kim'a i Wang'a (2018) zakładają istnienie dwóch prób: losowej (o liczebności 500 lub 1 000) oraz nielosowej.
+-   Próba losowa została wylosowania stosując losowanie proste bez zwracania.
+-   Przynależność do próby losowej wylosowano zgodnie z rozkładem Bernulliego ($\delta_i \sim Bern(p_i)$)
 -   Wielkość populacji ($N$) ustalono na 1 000 000.
--   Zmienne objaśniające ($X_1$ i $X_2$) oraz błąd losowy ($\epsilon$)
-    były wygenerowane zgodnie z następującym układem
+-   Zmienne objaśniające ($X_1$ i $X_2$) oraz błąd losowy ($\epsilon$) były wygenerowane zgodnie z następującym układem
 
 $$
 \begin{aligned}
@@ -39,8 +34,7 @@ X_2 & \sim Exp(1), \\
 \end{aligned}
 $$
 
--   Następnie wygenerowano dwie zmienne celu $Y_1$ i $Y_2$ według
-    następujących modeli
+-   Następnie wygenerowano dwie zmienne celu $Y_1$ i $Y_2$ według następujących modeli
 
 $$
 \begin{aligned}
@@ -49,8 +43,7 @@ Y_2 & = 0.5(X_1-0.5)^2 + X_2 + \epsilon.
 \end{aligned}
 $$
 
--   Identyfikator $\delta_i$ wylosowano z rozkładu Bernoullego zgodnie z
-    prawdopodobieństwem $p_i$ danym dwoma wzorami:
+-   Identyfikator $\delta_i$ wylosowano z rozkładu Bernoullego zgodnie z prawdopodobieństwem $p_i$ danym dwoma wzorami:
 
 $$
 \begin{aligned}
@@ -133,20 +126,19 @@ curve(expr = exp(-0.5+0.5*(x-2)^2)/(1+exp(-0.5+0.5*(x-2)^2)),
 
 # Artykuł @yang2020
 
-## Omówienie 
+## Omówienie
 
 Autorzy zakładają populację składającą się ze zmiennych $X$ oraz $Y$ daną
 
 $$
 \mathcal{F}_{N}=\left\{\left(X_{i}, Y_{i}\right): i=1, \ldots, N\right\},
-$$ 
+$$
 
 gdzie wielkość populacji to $N=10000$, $Y_{i}$ może być zmienną ciągłą lub dyskretną oraz
 
 $$
 X_{i}=\left(1, X_{1, i}, \ldots, X_{p-1, i}\right)^{\mathrm{T}},
-$$
-jest $p$-wymiarowym wektorem zmiennych pomocniczych ze stałą 1 na pirwszym miejscu, a pozostałe zmienne zostały wyngernowane z rozkładu normalnego standaryzowanego. Autorzy ustalili liczbę zmiennych na $p=50$. 
+$$ jest $p$-wymiarowym wektorem zmiennych pomocniczych ze stałą 1 na pirwszym miejscu, a pozostałe zmienne zostały wyngernowane z rozkładu normalnego standaryzowanego. Autorzy ustalili liczbę zmiennych na $p=50$.
 
 From the finite population, we select a non-probability sample $\mathcal{B}$ of size $n_{\mathrm{B}} \approx 2000$, according to the selection indicator $I_{\mathrm{B}, i} \sim$ Ber $\left(\pi_{\mathrm{B}, i}\right)$.
 
@@ -154,27 +146,24 @@ We select a probability sample $\mathcal{A}$ of the average size $n_{\mathrm{A}}
 
 $$
 \pi_{\mathrm{A}, i} \propto\left(0.25+\left|X_{1 i}\right|+0.03\left|Y_{i}\right|\right).
-$$ 
+$$
 
 The parameter of interest is the population mean $\mu=N^{-1} \sum_{i=1}^{N} Y_{i}$.
 
 For the non-probability sampling probability, we consider both linear and non-linear sampling score models:
 
-  + $\operatorname{logit}\left(\pi_{\mathrm{B}, i}\right)=\alpha_{0}^{\mathrm{T}} X_{i}$, where $\alpha_{0}=(-2,1,1,1,1,0,0,0, \ldots, 0)^{\mathrm{T}}$ (model PSM I);
-  + $\operatorname{logit}\left(\pi_{\mathrm{B}, i}\right)=3.5+\alpha_{0}^{\mathrm{T}} \log \left(X_{i}^{2}\right)-\sin \left(X_{3, i}+X_{4, i}\right)-X_{5, i}-X_{6, i}$, where $\alpha_{0}=(0,0,0,3,3,3,3$,
-$0, \ldots, 0)^{\mathrm{T}}$ (model PSM II).
+-   $\operatorname{logit}\left(\pi_{\mathrm{B}, i}\right)=\alpha_{0}^{\mathrm{T}} X_{i}$, where $\alpha_{0}=(-2,1,1,1,1,0,0,0, \ldots, 0)^{\mathrm{T}}$ (model PSM I);
+-   $\operatorname{logit}\left(\pi_{\mathrm{B}, i}\right)=3.5+\alpha_{0}^{\mathrm{T}} \log \left(X_{i}^{2}\right)-\sin \left(X_{3, i}+X_{4, i}\right)-X_{5, i}-X_{6, i}$, where $\alpha_{0}=(0,0,0,3,3,3,3$, $0, \ldots, 0)^{\mathrm{T}}$ (model PSM II).
 
-For generating a continuous outcome variable $Y_{i}$, we consider both linear and non-linear
-outcome models with $\beta_{0}=(1,0,0,1,1,1,1,0, \ldots, 0)^{\mathrm{T}}$ :
+For generating a continuous outcome variable $Y_{i}$, we consider both linear and non-linear outcome models with $\beta_{0}=(1,0,0,1,1,1,1,0, \ldots, 0)^{\mathrm{T}}$ :
 
-  + $Y_{i}=\beta_{0}^{\mathrm{T}} X_{i}+\epsilon_{i}, \epsilon_{i} \sim \mathcal{N}(0,1)$ (model OM I);
-  + $Y_{i}=1+\exp \left\{3 \sin \left(\beta_{0}^{\mathrm{T}} X_{i}\right)\right\}+X_{5, i}+X_{6, i}+\epsilon_{i}, \epsilon_{i} \sim \mathcal{N}(0,1)$ (model OM II).
+-   $Y_{i}=\beta_{0}^{\mathrm{T}} X_{i}+\epsilon_{i}, \epsilon_{i} \sim \mathcal{N}(0,1)$ (model OM I);
+-   $Y_{i}=1+\exp \left\{3 \sin \left(\beta_{0}^{\mathrm{T}} X_{i}\right)\right\}+X_{5, i}+X_{6, i}+\epsilon_{i}, \epsilon_{i} \sim \mathcal{N}(0,1)$ (model OM II).
 
-For generating a binary outcome variable $Y_{i}$, we consider both linear and non-linear outcome
-models with $\beta_{0}=(1,0,0,3,3,3,3,0, \ldots, 0)^{\mathrm{T}}$,
+For generating a binary outcome variable $Y_{i}$, we consider both linear and non-linear outcome models with $\beta_{0}=(1,0,0,3,3,3,3,0, \ldots, 0)^{\mathrm{T}}$,
 
-+ $Y \sim \operatorname{Ber}\left\{\pi_{Y}(X)\right\}$ with logit $\left\{\pi_{Y}(X)\right\}=\beta_{0}^{\mathrm{T}} X$ (model OM III);
-+ $Y \sim \operatorname{Ber}\left\{\pi_{Y}(X)\right\}$ with logit $\left\{\pi_{Y}(X)\right\}=2-\log \left\{\left(\beta_{0}^{\mathrm{T}} X\right)^{2}\right\}+2 X_{5, i}+2 X_{6, i}$ (model OM IV).
+-   $Y \sim \operatorname{Ber}\left\{\pi_{Y}(X)\right\}$ with logit $\left\{\pi_{Y}(X)\right\}=\beta_{0}^{\mathrm{T}} X$ (model OM III);
+-   $Y \sim \operatorname{Ber}\left\{\pi_{Y}(X)\right\}$ with logit $\left\{\pi_{Y}(X)\right\}=2-\log \left\{\left(\beta_{0}^{\mathrm{T}} X\right)^{2}\right\}+2 X_{5, i}+2 X_{6, i}$ (model OM IV).
 
 ## Implementacja
 
@@ -213,4 +202,3 @@ pi_A_Y_OM3 <- inclusionprobabilities(0.25 + abs(X[, 2]) + 0.03*abs(Y_OM3), n_A)
 pi_A_Y_OM4 <- inclusionprobabilities(0.25 + abs(X[, 2]) + 0.03*abs(Y_OM4), n_A)
 
 ```
-
