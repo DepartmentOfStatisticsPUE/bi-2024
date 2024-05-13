@@ -1,11 +1,16 @@
 ---
 title: "Symulacje na potrzeby projektu z badań internetowych"
 author: "Maciej Beręsewicz"
-output:
-  html_document:
+execute: 
+  eval: true
+  warning: false
+  message: false
+format:
+  html:
     df_print: paged
-    toc: yes
-    number_sections: true
+    self-contained: true
+    table-of-contents: true
+    number-sections: false
 editor_options: 
   markdown: 
     wrap: 100
@@ -72,7 +77,6 @@ gdzie $\mathbf{\alpha}=(0,3,-3)^T$.
 
 -   Selekcja do próby losowej ($S_B$) o liczebności 1,000 przez losowanie proste ze zwracaniem.
 
-
 ## Symulacja 2
 
 ### Informacje o symulacji
@@ -101,7 +105,7 @@ $$
 -   Dwie zmienne celu $Y_1$ i $Y_2$
 
 -   Ciągła: $$
-          Y_1 = 1 + \exp(3 + X_{4i} + X_{5i} + \epsilon
+          Y_1 = 1 + X_{4i} + X_{5i} + \epsilon
     $$ gdzie $\epsilon\sim N(0,1)$.
 
 -   Binarna: $$
@@ -135,11 +139,14 @@ $$
 -   liczebność próby w poszczególnych warstwach wynosi: 700, 300,
 
 -   prawdopodobieństwo inkluzji dla każdej warstwy wynosi:
-    $\pi_w=(\frac{7}{100}, \frac{3}{100})$,
+    $\pi_w=(\frac{7}{100}, \frac{3}{100})$  (błąd!!! powinno być $\pi_w=(\frac{n_1}{N_1}, \frac{n_2}{N_2})$ gdzie $n_1$ to wielkość próby dla pierwszej klasy, a $N_1$ to wielkość populacji tej klasy),
 
 -   każdej wylosowanej jednostce należy przypisać wagę $d_i$ będącą odwrotnością inkluzji warstwy, w
     której się znajduje.
     
+
+
+
 ## Symulacja 3
 
 ### Informacje o symulacji
@@ -205,10 +212,11 @@ $$
 -   liczebność próby w poszczególnych warstwach wynosi: 100, 200, 300, 400,
 
 -   prawdopodobieństwo inkluzji dla każdej warstwy wynosi:
-    $\pi_w=(\frac{1}{100}, \frac{2}{100}, \frac{3}{100}, \frac{4}{100})$,
+    $\pi_w=(\frac{1}{100}, \frac{2}{100}, \frac{3}{100}, \frac{4}{100})$ (błąd!!! powinno być $\pi_w=(\frac{n_1}{N_1}, \frac{n_2}{N_2}, \frac{n_3}{N_3}, \frac{n_4}{N_4})$ gdzie $n_1$ to wielkość próby dla pierwszej klasy, a $N_1$ to wielkość populacji tej klasy),
 
 -   każdej wylosowanej jednostce należy przypisać wagę $d_i$ będącą odwrotnością inkluzji warstwy, w
     której się znajduje.
+
 
 # Raporty dla każdej symulacji
 
@@ -235,3 +243,129 @@ $$ + RMSE
 $$
 \text{RMSE} = \sqrt{\text{Bias}^2 + \text{Var}} 
 $$
+
+
+# Rozwiązania
+
+## Pakiety
+
+```{r}
+library(survey)
+library(sampling)
+```
+
+## Kod do symulacji 1
+
+```{r}
+set.seed(123)       ## odtwarzalnosc
+N <- 100000         ## wielkosc populacji
+n_B <- 1000         ## wielkosć próby losowej
+R <- 500            ## liczba iteracji
+X <- cbind(1, rnorm(N, 1,1), rnorm(N, 1,1))         ## macierz X
+betas <- c(1,1,-1)                                  ## bety w regresji dla Y1
+alphas <- c(0,3,-3)                                 ## alfy dla selekcji
+epsilon <- rnorm(N)                                 ## reszty dla regresji
+Y1 <- as.numeric(X %*% as.matrix(betas)) + epsilon  ## regresja Y1
+Y2 <- rbinom(N, 1, plogis(-1 + 2*X[,2]))            ## regresja Y2
+s_A_sel <- as.numeric(plogis(3.5 + X %*% as.numeric(alphas)))  ## selekcja do próby S_A
+pop_data <- data.frame(X,Y1,Y2, s_A_sel)                       ## zbior danych
+results  <- matrix(data=0,nrow = R, ncol = 4)                  ## macierz z wynikami
+colnames(results) <- c("nonprob_Y1","nonprob_Y2", "prob_Y1", "prob_Y2")         ## nazwy kolumn
+
+for (r in 1:R) {
+  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 0),]         ## losujemy jednostki do próby S_A
+  S_B <- pop_data[sample(1:N, n_B),]                          ## losujemy jednostki do próby S_B
+  results[r, 1:2] <- colMeans(S_A[, c("Y1", "Y2")])           ## wyznaczamy średnie na podstawie S_A
+  results[r, 3:4] <- colMeans(S_B[, c("Y1", "Y2")])           ## wyznaczamy średnie na podstawie S_B
+}
+
+## obciązenuie
+bias <- colMeans(results) - c(colMeans(pop_data[, c("Y1", "Y2")]),colMeans(pop_data[, c("Y1", "Y2")]))
+var <- apply(results, 2, var)                   ## wariancja
+rmse <- sqrt(bias^2 + var)                      ## rmse
+
+data.frame(bias=bias, var=var, rmse=rmse)       ## raport
+```
+
+## Kod do symulacji 2
+
+```{r, eval=FALSE}
+set.seed(123)       ## odtwarzalnosc
+N <- 10000          ## wielkosc populacji
+n_B <- c(700, 300)  ## wielkosć próby losowej
+R <- 500            ## liczba iteracji
+X <- cbind(1, rnorm(N), rnorm(N), rnorm(N), rnorm(N))        ## macierz X
+betas <- c(1, 0,0, 1,-1)                                     ## bety w regresji dla Y2
+epsilon <- rnorm(N)                                          ## reszty dla regresji
+Y1 <- 1 + X[, 4] + X[, 5] + epsilon                                  ## regresja Y1
+Y2 <- rbinom(N, 1, plogis(X %*% as.matrix(betas)))                   ## regresja Y2
+s_A_sel <- as.numeric(plogis(3.5 - sin(X[,2]+X[,3]) + X[,4]+X[,5]))  ## selekcja do próby S_A
+X_warstwa <- ifelse(X[,2] < 0.5, "warstwa1", "warstwa2")
+pop_data <- data.frame(X,Y1,Y2, X_warstwa, s_A_sel)                             ## zbior danych
+results  <- matrix(data=0,nrow = R, ncol = 4)                        ## macierz z wynikami
+colnames(results) <- c("nonprob_Y1","nonprob_Y2", "prob_Y1", "prob_Y2")         ## nazwy kolumn
+
+for (r in 1:R) {
+  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 0),]         ## losujemy jednostki do próby S_A
+  
+  S_B <- sampling::strata(pop_data, "X_warstwa", size=c(700, 300), method="srswor")
+  S_B <- svydesign(ids = ~1, prob = ~Prob, strata = ~ Stratum, data = getdata(pop_data, S_B))
+
+  results[r, 1:2] <- colMeans(S_A[, c("Y1", "Y2")])           ## wyznaczamy średnie na podstawie S_A
+  results[r, 3:4] <- svymean(~Y1+Y2, S_B)[1:2]                ## wyznaczamy średnie na podstawie S_B
+}
+
+## obciązenuie
+bias <- colMeans(results) - c(colMeans(pop_data[, c("Y1", "Y2")]),colMeans(pop_data[, c("Y1", "Y2")]))
+var <- apply(results, 2, var)                   ## wariancja
+rmse <- sqrt(bias^2 + var)                      ## rmse
+
+data.frame(bias=bias, var=var, rmse=rmse)       ## raport
+```
+
+## Kod do symulacji 3
+
+```{r}
+set.seed(123)
+N <- 10000
+n_B <- 1000
+R <- 500
+p <- 14
+X <- cbind(1, matrix(rnorm(N*14), N))
+betas1 <- c(1,0,0,1/2,-1/2,1/2,-1/2, rep(0, p-6))
+betas2 <- c(1,0,0,-1,1,-1,1, rep(0, p-6))
+alphas <- c(1,0,0,-1,1,-1,1, rep(0, p-6))
+epsilon <- rnorm(N)
+
+Y1 <- 1 + exp(3*sin(as.numeric(X %*% as.matrix(betas1)))) + X[,5] + X[,6] + epsilon 
+Y2 <- rbinom(N, 1, plogis(as.numeric(X %*% as.matrix(betas2))))
+s_A_sel <- as.numeric(plogis(3.5  + log(X^2) %*% as.matrix(alphas) - sin(X[,3]+X[,4]) - X[,5] - X[,6]))
+
+X_warstwa <- numeric(N)
+X_warstwa[X[,2] < 0.5 & X[,4] < 0] <- 1
+X_warstwa[X[,2] >= 0.5 & X[,4] < 0] <- 2
+X_warstwa[X[,2] < 0.5 & X[,4] > 0] <- 3
+X_warstwa[X[,2] >= 0.5 & X[,4] > 0] <- 4
+
+pop_data <- data.frame(X,Y1,Y2, s_A_sel, X_warstwa)
+results  <- matrix(data=0,nrow = R, ncol = 4)
+
+colnames(results) <- c("nonprob_Y1","nonprob_Y2", "prob_Y1", "prob_Y2")
+
+for (r in 1:R) {
+  
+  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 0),]
+  
+  S_B <- sampling::strata(pop_data, "X_warstwa", size=c(1:4)*100, method="srswor")
+  S_B <- svydesign(ids = ~1, prob = ~Prob, strata = ~ Stratum, data = getdata(pop_data, S_B))
+
+  results[r, 1:2] <- colMeans(S_A[, c("Y1", "Y2")])
+  results[r, 3:4] <- svymean(~Y1+Y2, S_B)[1:2]
+}
+
+bias <- colMeans(results) - c(colMeans(pop_data[, c("Y1", "Y2")]),colMeans(pop_data[, c("Y1", "Y2")]))
+var <- apply(results, 2, var)
+rmse <- sqrt(bias^2 + var)
+
+data.frame(bias=bias, var=var, rmse=rmse)
+```

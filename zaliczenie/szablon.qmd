@@ -6,7 +6,7 @@ format:
     table-of-contents: true
     number-sections: true
     df-print: kable
-editor: visual
+editor: source
 execute: 
   eval: true
   warning: false
@@ -17,28 +17,28 @@ lang: pl
 
 ## Autorzy
 
-- należy wymienic autorów projektu oraz ich wkład w realizację projektu
+-   należy wymienic autorów projektu oraz ich wkład w realizację projektu
 
 ## Wprowadzenie
 
-- zwięzły opis projektu dotyczący wyboru estymatorów oraz opis danych
+-   zwięzły opis projektu dotyczący wyboru estymatorów oraz opis danych
 
 ## Symulacja
 
 ### Założenia
 
-- zwięzły opis symulacji, jak były generowane dane, może być w postaci pseudokodu np.
+-   zwięzły opis symulacji, jak były generowane dane, może być w postaci pseudokodu np.
 
-1. ustalono wielkość próby losowej na $n_a=1000$ i próby nielosowej na $n_b=5000$,
-2. wygenerowano zmienną $X_1 \sim (0,1)$ oraz $X_2 \sim \chi(2)$
-3. wygenerowano zmienną/e $Y$ zgodnie z poniższym wzorem
+1.  ustalono wielkość próby losowej na $n_a=1000$ i próby nielosowej na $n_b=5000$,
+2.  wygenerowano zmienną $X_1 \sim (0,1)$ oraz $X_2 \sim \chi(2)$
+3.  wygenerowano zmienną/e $Y$ zgodnie z poniższym wzorem
 
 $$
 Y = \beta_1 + \beta_2 X_1 + \beta_3 X_3 + \epsilon; \quad \epsilon \sim N(0,1)
 $$
 
-4. Próbę losową wygenerowano na podstawie losowania prostego / prostego warstwowego / ... 
-5. Próbę nielosową wygenerowano zgodnie z poniższym modelem
+4.  Próbę losową wygenerowano na podstawie losowania prostego / prostego warstwowego / ...
+5.  Próbę nielosową wygenerowano zgodnie z poniższym modelem
 
 $$
 R = 
@@ -50,18 +50,17 @@ $$
 
 ### Ocena estymatorów
 
-- trzeba podać miary oceny estymatorów (np. obciążenie, wariancję, MSE, RMSE)
+-   trzeba podać miary oceny estymatorów (np. obciążenie, wariancję, MSE, RMSE)
 
 ### Kod do symulacji
 
 -- kod wraz z komentarzami i opisem co ten kod robi
 
-
 ## Wyniki symulacji
 
-- opis wyników symulacji (tabela i wykresy)
-- interpretacja wyników
+-   opis wyników symulacji (tabela i wykresy)
+-   interpretacja wyników
 
 ## Podsumowanie
 
-- zwięzłe podsumowanie projektu
+-   zwięzłe podsumowanie projektu
