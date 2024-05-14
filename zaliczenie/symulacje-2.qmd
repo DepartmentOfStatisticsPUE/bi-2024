@@ -1,0 +1,93 @@
+---
+title: "Symulacje na potrzeby projektu z badań internetowych"
+author: "Maciej Beręsewicz"
+execute: 
+  eval: true
+  warning: false
+  message: false
+format:
+  html:
+    df_print: paged
+    self-contained: true
+    table-of-contents: true
+    number-sections: false
+editor_options: 
+  markdown: 
+    wrap: 100
+---
+
+# Symulacje
+
+Każda grupa projektowa przesyła kod poszczególnych symulacji przez moodle do *11.05 (23:59)*.
+
+Wymagania dot. pliku:
+
+-   plik powiniem nazywać się: *grupa-NR* i mieć jedno z następujących rozszerzeń:
+    `.R, .RMD, .QMD, .PY, .IPYNB, .JL`,
+-   plik powiniem zawierać komentarze abym mógł zrozumieć co się tam dzieje,
+-   jeżeli plik wykorzystuje biblioteki należy je załadować na samym początku,
+-   W razie pytań proszę o kontakt,
+-   dla każdej symulacji ustawić `set.seed(2024)`.
+
+# Zadanie
+
+Korzystając z kodów na symulacje z [wcześniejszego notatnika](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje.html) należy do symulacji 2 i 3 dodać:
+
++ estymator IPW dla średniej Y1 i Y2, korzystając z funkcji `nonprobsvy::nonprob`
++ przykład na podstawie symulacji 1
+
+```{r}
+library(nonprobsvy)
+```
+
+```{r}
+set.seed(2024)       ## odtwarzalnosc
+N <- 100000         ## wielkosc populacji
+n_B <- 1000         ## wielkosć próby losowej
+R <- 100            ## liczba iteracji
+X <- cbind(1, rnorm(N, 1,1), rnorm(N, 1,1))         ## macierz X
+betas <- c(1,1,-1)                                  ## bety w regresji dla Y1
+alphas <- c(0,3,-3)                                 ## alfy dla selekcji
+epsilon <- rnorm(N)                                 ## reszty dla regresji
+Y1 <- as.numeric(X %*% as.matrix(betas)) + epsilon  ## regresja Y1
+Y2 <- rbinom(N, 1, plogis(-1 + 2*X[,2]))            ## regresja Y2
+s_A_sel <- as.numeric(plogis(3.5 + X %*% as.numeric(alphas)))  ## selekcja do próby S_A
+pop_data <- data.frame(X,Y1,Y2, s_A_sel)                       ## zbior danych
+results  <- matrix(data=0,nrow = R, ncol = 4)                  ## macierz z wynikami
+colnames(results) <- c("nonprob_Y1","nonprob_Y2", "prob_Y1", "prob_Y2")         ## nazwy kolumn
+
+pop_data <- data.frame(X,Y1,Y2, s_A_sel)                       ## zbior danych
+results  <- matrix(data=0,nrow = R, ncol = 6)                  ## macierz z wynikami
+
+colnames(results) <- c("nonprob_Y1",
+                       "nonprob_Y2", 
+                       "prob_Y1", 
+                       "prob_Y2",
+                       "IPW Y1",
+                       "IPW Y2")         ## nazwy kolumn
+
+for (r in 1:R) {
+  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 0),]         ## losujemy jednostki do próby S_A
+  S_B <- pop_data[sample(1:N, n_B),]                          ## losujemy jednostki do próby S_B
+  
+  S_B$waga <- N/n_B
+  S_B_svydes <- svydesign(ids=~1, weights = ~ waga, data=S_B)
+  
+  results[r, 1:2] <- colMeans(S_A[, c("Y1", "Y2")])           ## wyznaczamy średnie na podstawie S_A
+  results[r, 3:4] <- svymean(~Y1+Y2,S_B_svydes)[1:2]           ## wyznaczamy średnie na podstawie S_B
+  results[r, 5:6] <- nonprob(selection = ~X2+X3,
+                             target = ~Y1+Y2,
+                             data=S_A,
+                             svydesign = S_B_svydes)$output$mean      
+}
+
+## obciązenuie
+bias <- colMeans(results) - rep(colMeans(pop_data[, c("Y1", "Y2")]), each = 3)
+var <- apply(results, 2, var)                   ## wariancja
+rmse <- sqrt(bias^2 + var)                      ## rmse
+
+data.frame(bias=bias, var=var, rmse=rmse)       ## raport
+```
+
+
+

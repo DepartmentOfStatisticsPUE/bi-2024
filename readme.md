@@ -20,8 +20,15 @@
 
 ## Projekt
 
-1. [Symulacja dla zespołów](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje.html)
-2. [Szablon projektu](zaliczenie/szablon.qmd)
+### Symulacje
+
++ [Symulacja dla zespołów #1](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje.html)
++ [Symulacja dla zespołów #2](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje-2.html)
+
+
+### Projekt 
+
++ [Szablon projektu](zaliczenie/szablon.qmd)
 
 ## Opis zbioru danych
 

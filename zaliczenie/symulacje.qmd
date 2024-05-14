@@ -259,7 +259,7 @@ library(sampling)
 ### Kod w R 
 
 ```{r}
-set.seed(123)       ## odtwarzalnosc
+set.seed(2024)       ## odtwarzalnosc
 N <- 100000         ## wielkosc populacji
 n_B <- 1000         ## wielkosć próby losowej
 R <- 500            ## liczba iteracji
@@ -296,7 +296,7 @@ import numpy as np
 import pandas as pd
 from scipy.special import expit
 
-np.random.seed(123)
+np.random.seed(2024)
 
 N = 100000  # size of population
 n_B = 1000  # size of random sample
@@ -335,7 +335,7 @@ pd.DataFrame({'Bias': bias, 'Var': var, 'RMSE': rmse})
 ## Kod do symulacji 2
 
 ```{r, eval=FALSE}
-set.seed(123)       ## odtwarzalnosc
+set.seed(2024)       ## odtwarzalnosc
 N <- 10000          ## wielkosc populacji
 n_B <- c(700, 300)  ## wielkosć próby losowej
 R <- 500            ## liczba iteracji
@@ -371,7 +371,7 @@ data.frame(bias=bias, var=var, rmse=rmse)       ## raport
 ## Kod do symulacji 3
 
 ```{r}
-set.seed(123)
+set.seed(2024)
 N <- 10000
 n_B <- 1000
 R <- 500
