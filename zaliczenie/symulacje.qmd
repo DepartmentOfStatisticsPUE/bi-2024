@@ -256,6 +256,8 @@ library(sampling)
 
 ## Kod do symulacji 1
 
+### Kod w R 
+
 ```{r}
 set.seed(123)       ## odtwarzalnosc
 N <- 100000         ## wielkosc populacji
@@ -286,6 +288,49 @@ rmse <- sqrt(bias^2 + var)                      ## rmse
 
 data.frame(bias=bias, var=var, rmse=rmse)       ## raport
 ```
+
+### Kod w Python
+
+```{python}
+import numpy as np
+import pandas as pd
+from scipy.special import expit
+
+np.random.seed(123)
+
+N = 100000  # size of population
+n_B = 1000  # size of random sample
+R = 500     # number of iterations
+
+X = np.column_stack((np.ones(N), np.random.normal(size=N, loc=1, scale=1),
+                      np.random.normal(size=N, loc=1, scale=1)))
+
+betas = np.array([1, 1, -1])  # coefficients for Y1 regression
+alphas = np.array([0, 3, -3])   # coefficients for selection
+epsilon = np.random.normal(size=N)  # residuals for regression
+
+Y1 = X.dot(betas) + epsilon  # regression Y1
+Y2 = np.random.binomial(1, expit(-1 + 2 * X[:, 1]), size=N)  # regression Y2
+s_A_sel = expit(3.5 + X.dot(alphas))  # selection for S_A
+
+pop_data = pd.DataFrame(np.hstack((X, Y1.reshape(-1, 1), Y2.reshape(-1, 1), s_A_sel.reshape(-1, 1))), columns=['X0', 'X1', 'X2', 'Y1', 'Y2', 's_A_sel'])
+
+results = np.zeros((R, 4))
+
+for r in range(R):
+    S_A = pop_data[np.random.binomial(1, s_A_sel, size=N) == 0]
+    S_B = pop_data.sample(n=n_B)
+    results[r, :2] = S_A[['Y1', 'Y2']].mean()
+    results[r, 2:] = S_B[['Y1', 'Y2']].mean()
+
+bias = results.mean(axis=0) - np.array([pop_data['Y1'].mean(), pop_data['Y2'].mean(), pop_data['Y1'].mean(), pop_data['Y2'].mean()])
+var = results.var(axis=0)
+rmse = np.sqrt(bias**2 + var)
+
+pd.DataFrame({'Bias': bias, 'Var': var, 'RMSE': rmse})
+```
+
+
 
 ## Kod do symulacji 2
 
