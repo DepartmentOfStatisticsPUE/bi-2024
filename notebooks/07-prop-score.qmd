@@ -38,8 +38,7 @@ library(nonprobsvy)
 Wczytujemy dane na potrzeby zajęć oraz dodajemy nowe zmienne:
 
 -   `R` -- informacja czy rekord przynależy do zbioru CBOP
--   `waga_do_modelu` -- zmienna, którą wykorzystamy do określenia, że
-    dany rekord dotyczy więcej niż jednego wakatu
+-   `waga_do_modelu` -- zmienna, którą wykorzystamy do określenia, że dany rekord dotyczy więcej niż jednego wakatu
 
 ```{r}
 dane <- read_csv("../data/popyt-zajecia-dane.csv") |>
@@ -55,13 +54,10 @@ head(dane)
 
 W poniższych przykładach zakładamy:
 
--   zmienne X takie jak sektor, klasa_pr, sekc_pkd, woj oraz zawod_kod2
-    są mierzone bez błędów,
--   zakładamy, że jednostki oraz ich wolne miejsca pracy występują
-    wyłącznie w jednym zbiorze danych,
+-   zmienne X takie jak sektor, klasa_pr, sekc_pkd, woj oraz zawod_kod2 są mierzone bez błędów,
+-   zakładamy, że jednostki oraz ich wolne miejsca pracy występują wyłącznie w jednym zbiorze danych,
 -   R=1 oznacza czy wakat pojawił się w CBOP, 0 w przeciwnym wypadku,
--   w regresji logistycznej wykorzystamy zmienne dotyczące zarówno
-    charakterystyk podmiotów, jak i wakatów (`zawod_kod2`).
+-   w regresji logistycznej wykorzystamy zmienne dotyczące zarówno charakterystyk podmiotów, jak i wakatów (`zawod_kod2`).
 
 ## Wykorzystanie regresji logistycznej -- jedna zmienna
 
@@ -134,8 +130,7 @@ dane_ipw <- dane |>
 head(dane_ipw)
 ```
 
-7.  Wynik po propensity score weighting / inverse probability weighting
-    i post-stratyfikacji
+7.  Wynik po propensity score weighting / inverse probability weighting i post-stratyfikacji
 
 ```{r}
 dane_ipw |> 

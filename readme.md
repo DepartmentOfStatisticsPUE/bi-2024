@@ -22,8 +22,9 @@
 
 ### Symulacje
 
-+ [Symulacja dla zespołów #1](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje.html)
-+ [Symulacja dla zespołów #2](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje-2.html)
++ [Symulacja #1 dla zespołów ](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje.html)
++ [Uwagi do kodów z symulacji](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje-1-przyklady-komentarze.html)
++ [Symulacja #2 dla zespołów](https://htmlpreview.github.io/?https://github.com/DepartmentOfStatisticsPUE/bi-2024/blob/main/zaliczenie/symulacje-2.html)
 
 
 ### Projekt 

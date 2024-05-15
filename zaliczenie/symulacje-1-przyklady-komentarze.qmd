@@ -1,0 +1,393 @@
+---
+title: "Projekt BI 2022/23 - grupa (wpisać numer zgodny z moodle)"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: false
+    df-print: kable
+editor: source
+execute: 
+  eval: false
+  warning: false
+  message: false
+toc-title: Spis treści
+lang: pl
+---
+
+## Przykłady z symulacji
+
+#### przykład
+
+```{r}
+install.packages("MASS") 
+library(MASS)
+install.packages("nonprobsvy")
+library(nonprobsvy)
+```
+
+Instalacja pakietów powinna być przed ładowaniem pakietów. W notatniku w oddzielnych chunkach
+
+#### przykład
+
+```{r}
+liczby <- rnorm(n, mean=1, sd=1) 
+X <- matrix(liczby ,ncol=3, nrow=n) 
+```
+
+Kod nie działa bo nie ma zdefiniowanego `n`. Poza tym `matrix(liczby ,ncol=3, nrow=n)` nie bedzie działać poprawnie bo to powtórzy wartości, a nie utworzy nowe, jak chcecie tak to trzeba N*3 zeby stworzyło 300000 wartości dla 3 kolumn.
+
+
+#### przykład
+
+```{r}
+X[,1] <- rep(1,n)
+X
+```
+
+Tu są zastępowane wartości pierwszej kolumny zamiast tworzyć nową, lepiej użyć `cbind(1, X)`. Jeżeli chcemy zastąpić mozemy użyc `X[,1] <- 1` (wektoryzacja w R).
+
+#### przykład
+
+```{r}
+set.seed(2024)
+#Selekcja do próby losowej (SA)
+alpha <- c(0, 3, -3)
+logit_pi_B <- 3.5 + (alpha) * X 
+```
+
+(alpha) * X nie działa poprawnie bo nie zgadzają się wymiary i dostać wektor Nx1 dostaje się macierz Nx3
+
+```{r}
+X <- cbind(rep(1,4), rep(2,4), rep(3, 4))
+alpha * X 
+```
+
+Daje 
+```
+  [,1] [,2] [,3]
+  [1,]    0    6   -9
+  [2,]    3   -6    0
+  [3,]   -3    0    9
+  [4,]    0    6   -9
+```
+
+Mnożenie macierzy to `%*%` a nie `*`. Należy użyc następującego kodu `X %*% as.matrix(alpha)`.
+
+#### przykład
+
+```{r}
+N <- 100000
+x1 <- rnorm(N,1,1)
+x2 <- rnorm(l_pow,1,1)
+const <- rbinom(N, 1,1) 
+macierz_X <- matrix(c(const,x1,x2), N, 3,FALSE)
+colnames(macierz_X) <- c("1","X1","X2")
+macierz_X
+```
+
+Nie losujemy `const` z `rbinom(N, 1,1)` tylko wystarczy `const <- 1`. Zamiast `macierz_X <- matrix(c(const,x1,x2), N, 3,FALSE)` należy użyć `X <- cbind(const, x1,x2)` lub `X <- cbind(1, x1,x2)`.
+
+
+
+#### przykład
+
+```{r}
+Z <- matrix(1, nrow = N, ncol = 1)  #tworzy kolumne wyraz wolny
+```
+
+wystarczy `Z <- 1`.
+
+#### przykład
+
+```{r}
+Beta <- c(1,1,-1)
+Alfa <- c(0,3,-3)
+E <- rnorm(1,0,1) #epsilon  z rozkładu N(0,1)
+```
+
+ogólnie trzeba zastanowic się czy używać małych czy duzych liter, raczej nie używać samego `E`. 
+
+#### przykład
+
+```{r}
+Y1 <- Beta[1]+Beta[2]*X1+Beta[3]*X2+E
+```
+
+Można było `można było X %*% as.matrix(Beta) + E` jak jest X jest macierzą. 
+
+
+#### przykład
+
+```{r}
+S_a <- populacja[sample(1:N, size =sample(1:1000,1), replace = TRUE, prob = pi_B),]
+```
+
+należało uzyć `rbinom(N,1,pi_B)`.
+
+#### przykład
+
+```{r}
+set.seed(2024)
+R <- 500
+alpha <- c(0,3,-3)
+E <- rnorm(N,0,1)
+Y1 <- 1+X1*1+X2*(-1)+E
+Y2 <- rbinom(N, 1, exp(-1+2*X2)/(1+exp(-1+2*X2)))
+popul <- data.frame(macierz1, Y1, Y2)
+logit1 <- as.numeric(3.5+macierz1 %*% alpha)
+p1 <- exp(logit1)/(1+exp(logit1))
+populacja_p1 <- data.frame(popul,p1)
+flag1 <- rbinom(n = N, size = 1, prob = populacja_p1$p1)
+populacja <- data.frame(populacja_p1,flag1)
+sredniesa1 <- matrix(0, nrow = R, ncol = 2)
+svydesign1 <- matrix(0, nrow = R, ncol = 2)
+populacja <- data.frame(populacja_p1,flag1)
+for(r in 1:R) {
+  s_a <- subset(populacja, flag1 == 1) 
+  s_b <- populacja[sample(1:N, 1000),]
+  
+  sredniesa1[r,] <- c(colMeans(s_a[,4:5]))
+  svydesign1[r,] <- c(colMeans(s_b[,4:5]))
+}
+```
+
+Tutaj `s_a <- subset(populacja, flag1 == 1)` nie ma zmienności bo `flag` jest przypisane na stałe do zbioru danych.
+
+#### przykład
+
+```{r}
+obciazeniesa1 <- mean(populacja$Y1) - sredniesa1[,1]
+obciazeniesa2 <- mean(populacja$Y2) - sredniesa1[,2]
+```
+
+obciązenie to E(sredniesa1) - true czyli powinno być
+
+```{r}
+colMeans(sredniesa1) - colMeans(populacja[, c("Y1", "Y2")])
+```
+
+#### przykład
+
+```{r}
+RMSEsb1 <- (obciazeniesb1^2+wariancjasb1)^0.5
+RMSEsb2 <- (obciazeniesb2^2+wariancjasb2)^0.5
+```
+
+`RMSEsb1` to skalar a tu nie jest bo `obciazeniesb1` to wektor.
+
+#### przykład
+
+```{r}
+set.seed(2024)
+N_3 <- 10000
+X2_3 <- rnorm(N_3,0,1)
+X3_3 <- rnorm(N_3,0,1)
+X4_3 <- rnorm(N_3,0,1)
+X5_3 <- rnorm(N_3,0,1)
+X6_3 <- rnorm(N_3,0,1)
+X7_3 <- rnorm(N_3,0,1)
+X8_3 <- rnorm(N_3,0,1)
+X9_3 <- rnorm(N_3,0,1)
+X10_3 <- rnorm(N_3,0,1)
+X11_3 <- rnorm(N_3,0,1)
+X12_3 <- rnorm(N_3,0,1)
+X13_3 <- rnorm(N_3,0,1)
+X14_3 <- rnorm(N_3,0,1)
+X15_3 <- rnorm(N_3,0,1)
+macierz3 <- data.frame(1,X2_3,X3_3,X4_3,X5_3,X6_3,X7_3,X8_3,X9_3,X10_3,X11_3,X12_3,X13_3,X14_3,X15_3)
+macierz3_3 <- cbind(1,X2_3,X3_3,X4_3,X5_3,X6_3,X7_3,X8_3,X9_3,X10_3,X11_3,X12_3,X13_3,X14_3,X15_3)
+head(macierz3)
+```
+
+MB można trochę prościej np. w pętli
+```{r}
+X <- matrix(0, nrow = N, p = p)
+for (p in 2:15) {
+  X[, p] <- rnorm(N)
+}
+```
+
+#### przykład
+
+```{r}
+X_2_4 <- log((X2_3)^2)
+X_3_4 <- log((X3_3)^2)
+X_4_4 <- log((X4_3)^2)
+X_5_4 <- log((X5_3)^2)
+X_6_4 <- log((X6_3)^2)
+X_7_4 <- log((X7_3)^2)
+X_8_4 <- log((X8_3)^2)
+X_9_4 <- log((X9_3)^2)
+X_10_4 <- log((X10_3)^2)
+X_11_4 <- log((X11_3)^2)
+X_12_4 <- log((X12_3)^2)
+X_13_4 <- log((X13_3)^2)
+X_14_4 <- log((X14_3)^2)
+X_15_4 <- log((X15_3)^2)
+macierz4 <- cbind(1,X_2_4,X_3_4,X_4_4,X_5_4,X_6_4,X_7_4,X_8_4,X_9_4,X_10_4,X_11_4,X_12_4,X_13_4,X_14_4,X_15_4)
+head(macierz4)
+```
+
+Wystarczy 
+
+```{r}
+macierz3[, 2:15] <- log(macierz3[, 2:15]^2)
+```
+
+#### przykład
+
+```{r}
+macierz3$warstwa_3 <- ifelse(macierz3$X2_3 < 0.5 & macierz3$X4_3 < 0, 1,
+                           ifelse(macierz3$X2_3 >= 0.5 & macierz3$X4_3 < 0, 2,
+                                  ifelse(macierz3$X2_3 < 0.5 & macierz3$X4_3 >= 0, 3, 4)))
+head(macierz3)
+```
+
+Można tak
+
+```{r}
+warstwa <- numeric(N)
+warstwa[macierz3$X2_3 < 0.5 & macierz3$X4_3 < 0] <- 1
+### ...i tak dalej
+```
+
+albo `dplyr::case_when` albo `data.table::fcase`.
+
+#### przykład
+
+```{r}
+β <- c(1, 1, -1)  
+```
+
+fajnie jest uzywać symboli greckich ale na systemach nie UTF-8 (np. windows) moze się z tego zrobić krzaczek wiec przynajmniej w R lepiej użyć `beta`.
+
+#### przykład
+
+```{r}
+s_a1 <- populacja1 [sample(seq_len(N), size = sum(runif(N) < prob_pi_B)), ]
+```
+
+należało użyć `rbinom(N,1, prob_pi_B)`
+
+
+#### przykład
+
+```{r}
+s_b1 <- populacja1 [sample(1:N, 1000, replace = TRUE), ]
+```
+
+Miała być próba losowa bez zwracania
+
+#### przykład
+
+
+```{r}
+N <- 100000 
+repeats <- 500  
+
+# Zmienne pomocnicze
+X1 <- rnorm(N, mean = 1, sd = 1)
+X2 <- rnorm(N, mean = 1, sd = 1)
+X <- cbind(rep(1, N), X1, X2)
+
+# Pusta ramka na dane
+results_df <- data.frame(
+  Iteracja = integer(),
+  Y1_mean = numeric(),
+  Y2_mean = numeric(),
+  Y1_bias = numeric(),
+  Y2_bias = numeric(),
+  Y1_var = numeric(),
+  Y2_var = numeric(),
+  Y1_rmse = numeric(),
+  Y2_rmse = numeric()
+)
+####################################################
+#### MB: populację tworzymy raz a potem z niej losujemy próby
+####################################################
+# Pętla 
+for (i in 1:repeats) {
+  # Zmienne celu
+  beta <- c(1, 1, -1)
+  epsilon <- rnorm(N)
+  Y1 <- beta[1] + beta[2]*X1 + beta[3]*X2 + epsilon
+  
+  pi_Y <- 1 / (1 + exp(-(-1 + 2*X2)))
+  Y2 <- rbinom(N, 1, pi_Y)
+  
+  # Próba nielosowa SA
+  alpha <- c(0, 3, -3)
+  logit_pi_B <- 3.5 + alpha %*% t(X)
+  prob_B <- 1 / (1 + exp(-logit_pi_B))
+  Sa <- sample(1:N, size = N, prob = prob_B, replace = TRUE)
+  
+  Y1_mean_SA <- mean(Y1[Sa])
+  Y2_mean_SA <- mean(Y2[Sa])
+  
+  # Próba losowa (SB)
+  Sb <- sample(1:N, size = 1000, replace = TRUE)
+  
+  Y1_mean_SB <- mean(Y1[Sb])
+  Y2_mean_SB <- mean(Y2[Sb])
+  
+  #Statystyki - Bias,Var,RMSE
+  Y1_bias <- Y1_mean_SA - Y1_mean_SB
+  Y2_bias <- Y2_mean_SA - Y2_mean_SB
+  
+  Y1_var <- var(Y1[Sa])
+  Y2_var <- var(Y2[Sa])
+  
+  Y1_rmse <- sqrt(Y1_bias^2 + Y1_var)
+  Y2_rmse <- sqrt(Y2_bias^2 + Y2_var)
+  
+  #Wyniki
+  results_df <- rbind(results_df, data.frame(
+    Iteracja = i,
+    Y1_mean = Y1_mean_SA,
+    Y2_mean = Y2_mean_SA,
+    Y1_bias = Y1_bias,
+    Y2_bias = Y2_bias,
+    Y1_var = Y1_var,
+    Y2_var = Y2_var,
+    Y1_rmse = Y1_rmse,
+    Y2_rmse = Y2_rmse
+  ))
+}
+
+```
+
+Dwie rzeczy:
+
++ populację tworzymy przed pętlą
++ `Statystyki - Bias,Var,RMSE` wyznaczamy po pętli
+
+
+#### przykład
+
+```{r}
+X<- cbind(rep(1, N), X1, X2)
+```
+
+wystarczy `X <- cbind(1, X1, X2)`
+
+
+#### przykład
+
+```{r}
+# inkluzja dla każdej warstwy
+p_incl <- c(7/100, 3/100)
+
+# Obliczenie wag dla każdej jednostki
+wagi <- rep(0, nrow(s_b))
+
+for (i in 1:nrow(s_b)) {
+  if (s_b[i, "warstwa"] == TRUE) {
+    wagi[i] <- 1 / p_incl[1]
+  } else {
+    wagi[i] <- 1 / p_incl[2]
+  }
+}
+```
+
+w R działa wektoryzacja więc wysztarczy uzyć `ifelse(s_b["warstwa"], 100/7, 100/3)`
