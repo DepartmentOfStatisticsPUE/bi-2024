@@ -104,7 +104,21 @@ var <- apply(results, 2, var)                   ## wariancja
 rmse <- sqrt(bias^2 + var)                      ## rmse
 
 data.frame(bias=bias, var=var, rmse=rmse)       ## raport
+
+
 ```
 
+```{r, fig.width=10, fig.height=5}
+par(mfrow=c(1,2), mar=c(2,2,2,2))
+boxplot(results[, grepl("Y1", colnames(results))], main = "Rozkład ocen estymatorów", 
+        ylab = "Wartość", xlab = "Estymator dla Y1")
+boxplot(results[, grepl("Y2", colnames(results))], main = "Rozkład ocen estymatorów", 
+        ylab = "Wartość", xlab = "Estymator dla Y2")
+```
 
+Interpretacja: 
 
++ estymator IPW dla średniej Y1 charakteryzuje się większym obciążeniem niż bez korekty (estymator naiwny),
++ estymator IPW dla średniej Y2 charakteryzuje się mniejszym obciążeniem niż bez korekty  (estymator naiwny),
++ estymator MI dla Y1 i Y2 charakteryzuje się mniejszym obciążeniem niż estymator IPW i estymator naiwny,
++ estymator DR ma większe obciążenie i RMSE niż estymator MI ale jest lepszy niż IPW.
