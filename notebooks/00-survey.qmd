@@ -1,0 +1,54 @@
+---
+title: "pakiet `survey` i `sampling`"
+format: 
+  html:
+    self-contained: true
+    table-of-contents: true
+    number-sections: false
+    df-print: kable
+editor: source
+execute: 
+  eval: false
+  warning: false
+  message: false
+toc-title: Spis treści
+lang: pl
+---
+
+# Deklaracja schematu losowania w pakiecie survey `sampling`
+
+1. Losowanie proste ($\pi_i=1/n$)
+
+```{r}
+proba <- svydesign(ids= ~1,
+                   probs = ~ pi,
+                   data = proba)
+```
+
+2. Losowanie proste warstwowe ($\pi_{ih}=n_h/N_h$)
+
+```{r}
+proba <- svydesign(ids= ~1,
+                   strata = ~ h,
+                   probs = ~ pi,
+                   data = proba)
+```
+
+3. Losowanie zespołowe
+
+```{r}
+proba <- svydesign(ids= ~id,
+                   probs = ~ pi,
+                   data = proba)
+```
+
+4. Losowanie zespołowe warstwowe
+
+```{r}
+proba <- svydesign(ids= ~id,
+                   strata = ~h
+                   probs = ~ pi,
+                   data = proba)
+```
+
+

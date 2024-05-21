@@ -275,7 +275,7 @@ results  <- matrix(data=0,nrow = R, ncol = 4)                  ## macierz z wyni
 colnames(results) <- c("nonprob_Y1","nonprob_Y2", "prob_Y1", "prob_Y2")         ## nazwy kolumn
 
 for (r in 1:R) {
-  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 0),]         ## losujemy jednostki do próby S_A
+  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 1),]         ## losujemy jednostki do próby S_A
   S_B <- pop_data[sample(1:N, n_B),]                          ## losujemy jednostki do próby S_B
   results[r, 1:2] <- colMeans(S_A[, c("Y1", "Y2")])           ## wyznaczamy średnie na podstawie S_A
   results[r, 3:4] <- colMeans(S_B[, c("Y1", "Y2")])           ## wyznaczamy średnie na podstawie S_B
@@ -318,7 +318,7 @@ pop_data = pd.DataFrame(np.hstack((X, Y1.reshape(-1, 1), Y2.reshape(-1, 1), s_A_
 results = np.zeros((R, 4))
 
 for r in range(R):
-    S_A = pop_data[np.random.binomial(1, s_A_sel, size=N) == 0]
+    S_A = pop_data[np.random.binomial(1, s_A_sel, size=N) == 1]
     S_B = pop_data.sample(n=n_B)
     results[r, :2] = S_A[['Y1', 'Y2']].mean()
     results[r, 2:] = S_B[['Y1', 'Y2']].mean()
@@ -351,7 +351,7 @@ results  <- matrix(data=0,nrow = R, ncol = 4)                        ## macierz 
 colnames(results) <- c("nonprob_Y1","nonprob_Y2", "prob_Y1", "prob_Y2")         ## nazwy kolumn
 
 for (r in 1:R) {
-  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 0),]         ## losujemy jednostki do próby S_A
+  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 1),]         ## losujemy jednostki do próby S_A
   
   S_B <- sampling::strata(pop_data, "X_warstwa", size=c(700, 300), method="srswor")
   S_B <- svydesign(ids = ~1, prob = ~Prob, strata = ~ Stratum, data = getdata(pop_data, S_B))
@@ -399,7 +399,7 @@ colnames(results) <- c("nonprob_Y1","nonprob_Y2", "prob_Y1", "prob_Y2")
 
 for (r in 1:R) {
   
-  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 0),]
+  S_A <- pop_data[which(rbinom(N, 1, s_A_sel) == 1),]
   
   S_B <- sampling::strata(pop_data, "X_warstwa", size=c(1:4)*100, method="srswor")
   S_B <- svydesign(ids = ~1, prob = ~Prob, strata = ~ Stratum, data = getdata(pop_data, S_B))
